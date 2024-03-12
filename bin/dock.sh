@@ -223,6 +223,27 @@ case $1 in
 
     docker build $@
   ;;
+  "arg/volume")
+    shift
+
+    host_path=$1
+
+    if [[ -e $host_path ]]
+    then
+      echo >/dev/stderr "dock.sh: arg/volume - host path is missing. exiting."
+      exit 1
+    fi
+
+    shift
+
+    container_path=$2
+
+    echo "-v ${host_path}:${container_path}"
+  ;;
+  "arg/daemon")
+    echo "-d"
+  ;;
+
   *|"help")
     cat <<HELP
 docker.sh
@@ -238,6 +259,11 @@ all           = show running and stopped containers
 stop          = stop a container by LABEL/ID (1)
 delete        = delete a container by LABEL/ID (1)
 cp            = copy a file out of the container LABEL/ID (1) container path (2) destination (3) default = "."
+
+arg/volume    = mount volume argument HOST_PATH (1) CONTAINER_PATH (2)
+arg/daemon    = run detached in the background
+
+
 HELP
   ;;
 esac
