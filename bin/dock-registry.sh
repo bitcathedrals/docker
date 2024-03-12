@@ -68,7 +68,7 @@ case $1 in
       exit 1.
     fi
 
-    docker search "$image"
+    docker search "$image" | tr -s ' ' | sort -k 1
   ;;
   "export")
     $0 images | grep -v REPOSITORY | tr -s ' ' | cut -d ' ' -f 1,2 | tr ' ' ':' | sed -e 's,^,dock-registry pull ,'
