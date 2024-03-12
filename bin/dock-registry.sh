@@ -10,13 +10,13 @@ case $1 in
 
     if [[ -z $image ]]
     then
-      echo >/dev/stderr "dock-reg.sh: pull \"image\" not specified. exiting."
+      echo >/dev/stderr "dock-registry.sh: pull \"image\" not specified. exiting."
       exit 1.
     fi
 
     if [[ -z $version ]]
     then
-      echo >/dev/stderr "dock-reg.sh: pull \"version\" not specified. exiting."
+      echo >/dev/stderr "dock-registry.sh: pull \"version\" not specified. exiting."
       exit 1.
     fi
 
@@ -34,6 +34,42 @@ case $1 in
       docker images
     fi
   ;;
+  "dangling")
+    docker images --filter dangling=true
+  ;;
+  "prune")
+    docker image prune
+  ;;
+  "filter")
+    shift
+    eval "docker images --filter=reference=\"$*\""
+  ;;
+  "label")
+    shift
+
+    label=$1
+
+    if [[ -z $label ]]
+    then
+      echo >/dev/stderr "dock-registry.sh: label (1) not specified. exiting."
+      exit 1.
+    fi
+
+    docker images --filter=label=${label}
+  ;;
+  "search")
+    shift
+
+    image=$1
+
+    if [[ -z $image ]]
+    then
+      echo >/dev/stderr "dock-registry.sh: search image (1) not specified. exiting."
+      exit 1.
+    fi
+
+    docker search "$image"
+  ;;
   "export")
     $0 images | grep -v REPOSITORY | tr -s ' ' | cut -d ' ' -f 1,2 | tr ' ' ':' | sed -e 's,^,dock-registry pull ,'
   ;;
@@ -43,6 +79,10 @@ cat <<HELP
 images     = ?FILTER show images with a optional regex pattern
 pull       = IMAGE,VERSION pull IMAGE:VERSION
 images     = show images
+dangling   = show dangling images
+prune      = prune dangling images
+filter     = filter by EXPR
+label      = list images with a matching label (1)
 export     = export a list of commands to install a set of docker images
 HELP
   ;;
