@@ -185,6 +185,39 @@ case $1 in
 
     docker rm $name
   ;;
+  "cp")
+    shift
+
+    label=$1
+
+    if [[ -z $label ]]
+    then
+      echo >/dev/stderr "dock.sh: cp - label is missing. exiting."
+      exit 1
+    fi
+
+    shift
+
+    source_path = $1
+
+    if [[ -z $source_path ]]
+    then
+      echo >/dev/stderr "dock.sh: cp - source path is missing. exiting."
+      exit 1
+    fi
+
+    shift
+
+    destination_path = $1
+
+    if [[ -z $destination_path ]]
+    then
+      echo >/dev/stderr "dock.sh: cp - destination path is missing. using CWD - $PWD"
+      destination_path=$PWD
+    fi
+
+    docker cp "$label:$source_path" $destination_path
+  ;;
   "build")
     shift
 
@@ -193,8 +226,18 @@ case $1 in
   *|"help")
     cat <<HELP
 docker.sh
-login      = login to docker account
-version    = show docker version
+login         = login to docker account
+version       = show docker version
+shell/version = open a shell in a container (DOCKER_IMAGE/(1),DOCKER_VERSION/(2)
+shell/name    = open a shell in a container with LABEL (1)
+run/version   = launch a container (DOCKER_IMAGE/(1),DOCKER_VERSION/(2)
+run/name      = launch a container  with LABEL (1)
+attach        = attach to a running container with LABEL/ID (1)
+running       = show running containers only
+all           = show running and stopped containers
+stop          = stop a container by LABEL/ID (1)
+delete        = delete a container by LABEL/ID (1)
+cp            = copy a file out of the container LABEL/ID (1) container path (2) destination (3) default = "."
 HELP
   ;;
 esac
