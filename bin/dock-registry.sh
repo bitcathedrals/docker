@@ -68,7 +68,45 @@ case $1 in
       exit 1.
     fi
 
-    docker search "$image" | tr -s ' ' | sort -k 1
+    shift
+
+    if [[ $1 == "official" ]]
+    then
+      official="--filter \"is-official=true\""
+    else
+      official=""
+    fi
+
+    shift
+
+    eval "docker search \"$image\" $official $* | tr -s ' ' | sort -k 1"
+  ;;
+  "delete")
+    shift
+
+    if [[ -z $image ]]
+    then
+      echo >/dev/stderr "dock-registry.sh: delete image (1) not specified. exiting."
+      exit 1.
+    fi
+
+    docker rmi $image
+  ;;
+  "nuke")
+    shift
+
+    echo "NUKE! will delete all images!!"
+
+    read -p "Proceed? [y/n]: " proceed
+
+    if [[ $proceed = "y" ]]
+    then
+      echo ">>> proceeding with nuclear fire!"
+      docker rmi $(docker images -q) -f
+    else
+      echo ">>> ABORT! exiting now!"
+      exit 1
+    fi
   ;;
   "export")
     $0 images | grep -v REPOSITORY | tr -s ' ' | cut -d ' ' -f 1,2 | tr ' ' ':' | sed -e 's,^,dock-registry pull ,'
