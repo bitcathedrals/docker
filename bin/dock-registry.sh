@@ -34,11 +34,16 @@ case $1 in
       docker images
     fi
   ;;
+  "export")
+    $0 images | grep -v REPOSITORY | tr -s ' ' | cut -d ' ' -f 1,2 | tr ' ' ':' | sed -e 's,^,dock-registry pull ,'
+  ;;
   *|"help")
 cat <<HELP
 
 images     = ?FILTER show images with a optional regex pattern
 pull       = IMAGE,VERSION pull IMAGE:VERSION
+images     = show images
+export     = export a list of commands to install a set of docker images
 HELP
   ;;
 esac
