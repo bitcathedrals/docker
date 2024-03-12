@@ -187,7 +187,7 @@ case $1 in
   ;;
   "build")
     shift
-hm
+
     docker build $@
   ;;
   *|"help")
