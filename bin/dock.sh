@@ -141,6 +141,17 @@ case $1 in
 
     eval "docker run $name_cmd ${label} $*"
   ;;
+  "start")
+    label=$1
+
+    if [[ -n $label ]]
+    then
+      echo >/dev/stderr "dock.sh: start - label/id is missing. exiting."
+      exit 1
+    fi
+
+    docker start $label
+  ;;
   "attach")
     shift
 
@@ -167,7 +178,7 @@ case $1 in
     if [[ -n $name ]]
     then
       echo >/dev/stderr "dock.sh: stop - name/id is missing. exiting."
-      exit 1
+
     fi
 
     docker stop $name
