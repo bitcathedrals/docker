@@ -28,13 +28,13 @@ case $1 in
       shift
     fi
 
-    if [[ -n $image ]]
+    if [[ -z $image ]]
     then
       echo >/dev/stderr "dock.sh: shell/version - either DOCKER_IMAGE or arg(1) not specified. exiting."
       exit 1
     fi
 
-    if [[ -n $version ]]
+    if [[ -z $version ]]
     then
       echo >/dev/stderr "dock.sh: shell/version - either DOCKER_VERSION or arg(2|1 if DOCKER_IMAGE) not specified. exiting."
       exit 1
