@@ -78,6 +78,8 @@ case $1 in
   "run/version")
     shift
 
+    image=""
+
     if [[ -n $DOCKER_IMAGE ]]
     then
       image=$DOCKER_IMAGE
@@ -85,6 +87,8 @@ case $1 in
       image=$1
       shift
     fi
+
+    version=""
 
     if [[ -n $DOCKER_VERSION ]]
     then
@@ -94,13 +98,13 @@ case $1 in
       shift
     fi
 
-    if [[ -n $image ]]
+    if [[ -z $image ]]
     then
       echo >/dev/stderr "dock.sh: run/version - either DOCKER_IMAGE or arg(1) not specified. exiting."
       exit 1
     fi
 
-    if [[ -n $version ]]
+    if [[ -z $version ]]
     then
       echo >/dev/stderr "dock.sh: run/version - either DOCKER_VERSION or arg(2|1 if DOCKER_IMAGE) not specified. exiting."
       exit 1
@@ -115,7 +119,7 @@ case $1 in
       shift
     fi
 
-    eval "docker run $name_cmd ${image}:${version} $*"
+    eval "docker run $name_cmd ${image}:${version} $restart $*"
   ;;
   "run/name")
     shift
@@ -139,62 +143,84 @@ case $1 in
       shift
     fi
 
-    eval "docker run $name_cmd ${label} $*"
+    restart=""
+
+    if [[ -n $1 ]]
+    then
+      case $1 in
+        "restart")
+          restart="--restart always"
+        ;;
+        "unless")
+          restart="--restart unless-stopped"
+        ;;
+        "failure")
+          restart="--restart on-failure"
+        ;;
+        *)
+          echo >/dev/stderr "unknown option $1"
+        ;;
+      esac
+    fi
+
+    eval "docker run $name_cmd ${label} $restart $*"
   ;;
   "start")
     label=$1
 
-    if [[ -n $label ]]
+    if [[ -z $label ]]
     then
       echo >/dev/stderr "dock.sh: start - label/id is missing. exiting."
       exit 1
+    else
+      shift
     fi
 
-    docker start $label
+    eval "docker start $label $*"
   ;;
   "attach")
     shift
 
     name=$1
 
-    if [[ -n $name ]]
+    if [[ -z $name ]]
     then
       echo >/dev/stderr "dock.sh: attach - name/id is missing. exiting."
     fi
 
-    docker exec -it $name bash
+    eval "docker exec -it $name bash $*"
   ;;
   "running")
-   docker ps
+   eval "docker ps $*"
   ;;
   "all")
-    docker ps -a
+    eval "docker ps -a $*"
   ;;
   "stop")
     shift
 
     name=$1
 
-    if [[ -n $name ]]
+    if [[ -z $name ]]
     then
       echo >/dev/stderr "dock.sh: stop - name/id is missing. exiting."
-
+      exit 1
     fi
 
-    docker stop $name
+    eval "docker stop $name $*"
   ;;
   "delete")
     shift
 
     name=$1
 
-    if [[ -n $name ]]
+    if [[ -z $name ]]
     then
       echo >/dev/stderr "dock.sh: delete - name/id is missing. exiting."
       exit 1
     fi
 
-    docker rm $name
+    eval "docker rm $name $*"
   ;;
   "cp")
     shift
@@ -209,7 +235,7 @@ case $1 in
 
     shift
 
-    source_path = $1
+    source_path=$1
 
     if [[ -z $source_path ]]
     then
@@ -219,7 +245,7 @@ case $1 in
 
     shift
 
-    destination_path = $1
+    destination_path=$1
 
     if [[ -z $destination_path ]]
     then
@@ -227,17 +253,18 @@ case $1 in
       destination_path=$PWD
     fi
 
-    docker cp "$label:$source_path" $destination_path
-  ;;
-  "build")
-    shift
-
-    docker build $@
+    eval "docker cp "$label:$source_path" $destination_path $*"
   ;;
   "arg/volume")
     shift
 
     host_path=$1
+
+    if [[ -z $host_path ]]
+    then
+      echo >/dev/stderr "dock.sh: arg/volume - no arg given."
+      exit 1
+    fi
 
     if [[ -e $host_path ]]
     then
@@ -254,7 +281,44 @@ case $1 in
   "arg/daemon")
     echo "-d"
   ;;
+  "arg/restart")
+    shift
 
+    restart=""
+
+    if [[ -z $1 ]]
+    then
+      echo >/dev/stderr "no restart option specified. exiting."
+      exit 1
+    fi
+
+    case $1 in
+      "restart")
+        echo "--restart always"
+      ;;
+      "unless")
+        echo "--restart unless-stopped"
+      ;;
+      "failure")
+        echo "--restart on-failure"
+      ;;
+      *)
+        echo >/dev/stderr "unknown option $1"
+        exit 1
+      ;;
+    esac
+  ;;
+  "arg/name")
+    name=""
+
+    if [[ -z $1 ]]
+    then
+      echo >/dev/stderr "dock.sh: no name given. exiting."
+      exit 1
+    fi
+
+    echo "--name $1"
+  ;;
   *|"help")
     cat <<HELP
 docker.sh
@@ -273,8 +337,8 @@ cp            = copy a file out of the container LABEL/ID (1) container path (2)
 
 arg/volume    = mount volume argument HOST_PATH (1) CONTAINER_PATH (2)
 arg/daemon    = run detached in the background
-
-
+arg/restart   = restart option always|unless-stopped|restart-on-failure
+arg/name      = <name>
 HELP
   ;;
 esac
