@@ -108,6 +108,19 @@ case $1 in
       exit 1
     fi
   ;;
+  "inspect")
+    shift
+
+    image=$1
+
+    if [[ -z $1 ]]
+    then
+      echo >/dev/null "no image specified. exiting."
+      exit 1
+    fi
+
+    docker inspect $image
+  ;;
   "export")
     $0 images | grep -v REPOSITORY | tr -s ' ' | cut -d ' ' -f 1,2 | tr ' ' ':' | sed -e 's,^,dock-registry pull ,'
   ;;
@@ -125,6 +138,7 @@ search     = search by MATCH (1) "official" as a second argument restricts to of
 delete     = delete IMAGE (1)
 nuke       = delete all images! will require confirmation
 export     = export a list of commands to install a set of docker images
+inspect    = inspect <image>
 HELP
   ;;
 esac
