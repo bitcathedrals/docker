@@ -126,8 +126,6 @@ case $1 in
   ;;
   *|"help")
 cat <<HELP
-
-images     = ?FILTER show images with a optional regex pattern
 pull       = IMAGE,VERSION pull IMAGE:VERSION
 images     = show images
 dangling   = show dangling images
