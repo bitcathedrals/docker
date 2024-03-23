@@ -67,7 +67,7 @@ case $1 in
       exit 1
     fi
 
-    if docker buildx build --builder=uber -t "$user/$name:$version" --platform="$DOCKER_PLATFORMS" .
+    if docker buildx build --builder=uber -t "$user/$name:$version" --platform="$DOCKER_PLATFORMS" --push .
     then
       echo /dev/stderr "dock-build.sh build - success!"
       echo "FROM $user/$name:$version"
