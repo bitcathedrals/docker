@@ -11,27 +11,29 @@ case $1 in
   "create")
     docker buildx create --name $BUILDER --platform=$DOCKER_PLATFORMS --use
   ;;
-  "dockfile")
+  "ls")
+    docker buildx ls
+  ;;
+  "generate")
     shift
-
     source=$1
 
     if [[ -z $source ]]
     then
-      echo >/dev/stderr "dock-build.sh: dockfile - .org Dockerfile not given. exiting."
+      echo >/dev/stderr "dock-build.sh: generate  - .org Dockerfile not given. exiting."
       exit 1
     fi
 
     org-compile.sh $source Dockerfile.python
   ;;
-  "history")
+  "info")
     shift
 
     name=$1
 
     if [[ -z $name ]]
     then
-      echo >/dev/stderr "dock-build.sh: history - name argument not given. exiting."
+      echo >/dev/stderr "dock-build.sh: info - name argument not given. exiting."
       exit 1
     fi
 
@@ -40,7 +42,15 @@ case $1 in
   "build")
     shift
 
-    user=$1
+    test -f python.sh && source python.sh
+
+    if [[ -n $DOCKER_USER ]]
+    then
+      user=$DOCKER_USER
+    else
+      user=$1
+      shift
+    fi
 
     if [[ -z $user ]]
     then
@@ -48,9 +58,13 @@ case $1 in
       exit 1
     fi
 
-    shift
-
-    name=$1
+    if [[ -n $BUILD_NAME ]]
+    then
+      name=$BUILD_NAME
+    else
+      name=$1
+      shift
+    fi
 
     if [[ -z $name ]]
     then
@@ -58,7 +72,6 @@ case $1 in
       exit 1
     fi
 
-    shift
     version=$1
 
     if [[ -z $version ]]
@@ -77,7 +90,14 @@ case $1 in
     fi
   ;;
   "help"|*)
-
+cat <<HELP
+version   = docker buildx version
+create    = create a builder uber and set to "use"
+ls        = list builders
+generate  = generate Dockerfile.python from a .org docker template <org-file>
+info      = show detailed information on <image>
+build     =
+HELP
   ;;
 esac
 
