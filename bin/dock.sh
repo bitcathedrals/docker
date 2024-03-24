@@ -160,7 +160,6 @@ case $1 in
   ;;
   "attach")
     shift
-
     name=$1
 
     if [[ -z $name ]]
@@ -168,7 +167,18 @@ case $1 in
       echo >/dev/stderr "dock.sh: attach - name/id is missing. exiting."
     fi
 
-    eval "docker exec -it $name bash $*"
+    eval "docker attach $name $*"
+  ;;
+  "exec")
+    shift
+    name=$1
+
+    if [[ -z $name ]]
+    then
+      echo >/dev/stderr "dock.sh: exec - name/id is missing. exiting."
+    fi
+
+    eval "docker exec $name $*"
   ;;
   "running")
    eval "docker ps $*"
@@ -299,6 +309,9 @@ case $1 in
 
     echo "--name $1"
   ;;
+  "arg/shell")
+    echo "-it bash"
+  ;;
   *|"help")
     cat <<HELP
 docker.sh
@@ -309,6 +322,7 @@ shell/name    = open a shell in a container with LABEL (1)
 run/version   = create & start container (DOCKER_IMAGE/(1),DOCKER_VERSION/(2)
 run/name      = create & start container with LABEL (1)
 attach        = attach to a running container viewing/interacting with PID 1
+exec          = exec a process inside the shell alongside PID 1
 running       = show running containers only
 all           = show running and stopped containers
 stop          = stop a container by LABEL/ID (1)
@@ -319,6 +333,7 @@ arg/volume    = mount volume argument HOST_PATH (1) CONTAINER_PATH (2)
 arg/daemon    = run detached in the background
 arg/restart   = restart option always|unless-stopped|restart-on-failure
 arg/name      = <name>
+arg/shell     = "invoke bash attached to terminal
 HELP
   ;;
 esac
