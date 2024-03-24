@@ -143,27 +143,7 @@ case $1 in
       shift
     fi
 
-    restart=""
-
-    if [[ -n $1 ]]
-    then
-      case $1 in
-        "restart")
-          restart="--restart always"
-        ;;
-        "unless")
-          restart="--restart unless-stopped"
-        ;;
-        "failure")
-          restart="--restart on-failure"
-        ;;
-        *)
-          echo >/dev/stderr "unknown option $1"
-        ;;
-      esac
-    fi
-
-    eval "docker run $name_cmd ${label} $restart $*"
+    eval "docker run $name_cmd ${label}"
   ;;
   "start")
     label=$1
@@ -326,9 +306,9 @@ login         = login to docker account
 version       = show docker version
 shell/version = open a shell in a container (DOCKER_IMAGE/(1),DOCKER_VERSION/(2)
 shell/name    = open a shell in a container with LABEL (1)
-run/version   = launch a container (DOCKER_IMAGE/(1),DOCKER_VERSION/(2)
-run/name      = launch a container  with LABEL (1)
-attach        = attach to a running container with LABEL/ID (1)
+run/version   = create & start container (DOCKER_IMAGE/(1),DOCKER_VERSION/(2)
+run/name      = create & start container with LABEL (1)
+attach        = attach to a running container viewing/interacting with PID 1
 running       = show running containers only
 all           = show running and stopped containers
 stop          = stop a container by LABEL/ID (1)
