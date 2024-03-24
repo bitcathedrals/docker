@@ -9,75 +9,8 @@ case $1 in
   "login")
     docker login
   ;;
-  "shell/version")
+  "run")
     shift
-
-    if [[ -n $DOCKER_IMAGE ]]
-    then
-      image=$DOCKER_IMAGE
-    else
-      image=$1
-      shift
-    fi
-
-    if [[ -n $DOCKER_VERSION ]]
-    then
-      version=$DOCKER_VERSION
-    else
-      version=$1
-      shift
-    fi
-
-    if [[ -z $image ]]
-    then
-      echo >/dev/stderr "dock.sh: shell/version - either DOCKER_IMAGE or arg(1) not specified. exiting."
-      exit 1
-    fi
-
-    if [[ -z $version ]]
-    then
-      echo >/dev/stderr "dock.sh: shell/version - either DOCKER_VERSION or arg(2|1 if DOCKER_IMAGE) not specified. exiting."
-      exit 1
-    fi
-
-    name_cmd=""
-
-    if [[ -n $1 ]]
-    then
-      name_cmd="--name $1"
-      echo >/dev/stderr "dock.sh: shell/version - using name ${1}."
-      shift
-    fi
-
-    eval "docker run -it $name_cmd ${image}:${version} $*"
-  ;;
-  "shell/name")
-    shift
-
-    label=$1
-
-    if [[ -n $label ]]
-    then
-      echo >/dev/stderr "dock.sh: shell/name - name is missing. exiting."
-      exit 1
-    fi
-
-    shift
-
-    name_cmd=""
-
-    if [[ -n $1 ]]
-    then
-      name_cmd="--name $1"
-      echo >/dev/stderr "dock.sh: shell/version - using name ${1}."
-      shift
-    fi
-
-    eval "docker run $name_cmd -it ${name} $*"
-  ;;
-  "run/version")
-    shift
-
     image=""
 
     if [[ -n $DOCKER_IMAGE ]]
@@ -98,84 +31,92 @@ case $1 in
       shift
     fi
 
+    name=""
+
+    if [[ -n $DOCKER_NAME ]]
+    then
+      name=$DOCKER_NAME
+    else
+      name=$1
+      shift
+    fi
+
     if [[ -z $image ]]
     then
-      echo >/dev/stderr "dock.sh: run/version - either DOCKER_IMAGE or arg(1) not specified. exiting."
+      echo >/dev/stderr "dock.sh: run - either DOCKER_IMAGE or arg(1) not specified. exiting."
       exit 1
     fi
 
     if [[ -z $version ]]
     then
-      echo >/dev/stderr "dock.sh: run/version - either DOCKER_VERSION or arg(2|1 if DOCKER_IMAGE) not specified. exiting."
+      echo >/dev/stderr "dock.sh: run - either DOCKER_VERSION or arg(2|1 if DOCKER_IMAGE) not specified. exiting."
       exit 1
     fi
 
-    name_cmd=""
-
-    if [[ -n $1 ]]
+    if [[ -z $name ]]
     then
-      name_cmd="--name $1"
-      echo >/dev/stderr "dock.sh: shell/version - using name ${1}."
-      shift
-    fi
-
-    eval "docker run $name_cmd ${image}:${version} $restart $*"
-  ;;
-  "run/name")
-    shift
-
-    label=$1
-
-    if [[ -n $label ]]
-    then
-      echo >/dev/stderr "dock.sh: run/name - label is missing. exiting."
+      echo >/dev/stderr "dock.sh: run - either DOCKER_NAME or arg(3|1 if DOCKER_NAME) not specified. exiting."
       exit 1
     fi
 
-    shift
-
-    name_cmd=""
-
-    if [[ -n $1 ]]
-    then
-      name_cmd="--name $1"
-      echo >/dev/stderr "dock.sh: run/name - with name ${1}."
-      shift
-    fi
-
-    eval "docker run $name_cmd ${label}"
+    eval "docker run ${image}:${version} --name $name $*"
   ;;
   "start")
-    label=$1
+    shift
+    name=""
 
-    if [[ -z $label ]]
+    if [[ -n $DOCKER_NAME ]]
     then
-      echo >/dev/stderr "dock.sh: start - label/id is missing. exiting."
-      exit 1
+      name=$DOCKER_NAME
     else
+      name=$1
       shift
     fi
 
-    eval "docker start $label $*"
+    if [[ -z $name ]]
+    then
+      echo >/dev/stderr "dock.sh: start - name/id is missing. exiting."
+      exit 1
+    fi
+
+    eval "docker start $name $*"
   ;;
   "attach")
     shift
-    name=$1
+    name=""
+
+    if [[ -n $DOCKER_NAME ]]
+    then
+      name=$DOCKER_NAME
+    else
+      name=$1
+      shift
+    fi
 
     if [[ -z $name ]]
     then
       echo >/dev/stderr "dock.sh: attach - name/id is missing. exiting."
+      exit
     fi
 
     eval "docker attach $name $*"
   ;;
   "exec")
     shift
-    name=$1
+    name=""
+
+    if [[ -n $DOCKER_NAME ]]
+    then
+      name=$DOCKER_NAME
+    else
+      name=$1
+      shift
+    fi
 
     if [[ -z $name ]]
     then
       echo >/dev/stderr "dock.sh: exec - name/id is missing. exiting."
+      exit
     fi
 
     eval "docker exec $name $*"
@@ -188,12 +129,19 @@ case $1 in
   ;;
   "stop")
     shift
+    name=""
 
-    name=$1
+    if [[ -n $DOCKER_NAME ]]
+    then
+      name=$DOCKER_NAME
+    else
+      name=$1
+      shift
+    fi
 
     if [[ -z $name ]]
     then
-      echo >/dev/stderr "dock.sh: stop - name/id is missing. exiting."
+      echo >/dev/stderr "dock.sh: exec - name/id is missing. exiting."
       exit 1
     fi
 
@@ -201,12 +149,19 @@ case $1 in
   ;;
   "delete")
     shift
+    name=""
 
-    name=$1
+    if [[ -n $DOCKER_NAME ]]
+    then
+      name=$DOCKER_NAME
+    else
+      name=$1
+      shift
+    fi
 
     if [[ -z $name ]]
     then
-      echo >/dev/stderr "dock.sh: delete - name/id is missing. exiting."
+      echo >/dev/stderr "dock.sh: rm - name/id is missing. exiting."
       exit 1
     fi
 
@@ -214,16 +169,21 @@ case $1 in
   ;;
   "cp")
     shift
+    name=""
 
-    label=$1
-
-    if [[ -z $label ]]
+    if [[ -n $DOCKER_NAME ]]
     then
-      echo >/dev/stderr "dock.sh: cp - label is missing. exiting."
-      exit 1
+      name=$DOCKER_NAME
+    else
+      name=$1
+      shift
     fi
 
-    shift
+    if [[ -z $name ]]
+    then
+      echo >/dev/stderr "dock.sh: cp - name/id is missing. exiting."
+      exit 1
+    fi
 
     source_path=$1
 
@@ -234,7 +194,6 @@ case $1 in
     fi
 
     shift
-
     destination_path=$1
 
     if [[ -z $destination_path ]]
@@ -243,7 +202,7 @@ case $1 in
       destination_path=$PWD
     fi
 
-    eval "docker cp "$label:$source_path" $destination_path $*"
+    eval "docker cp "$name:$source_path" $destination_path $*"
   ;;
   "arg/volume")
     shift
@@ -317,17 +276,15 @@ case $1 in
 docker.sh
 login         = login to docker account
 version       = show docker version
-shell/version = open a shell in a container (DOCKER_IMAGE/(1),DOCKER_VERSION/(2)
-shell/name    = open a shell in a container with LABEL (1)
-run/version   = create & start container (DOCKER_IMAGE/(1),DOCKER_VERSION/(2)
-run/name      = create & start container with LABEL (1)
-attach        = attach to a running container viewing/interacting with PID 1
-exec          = exec a process inside the shell alongside PID 1
+run           = create & start container (DOCKER_IMAGE/(1),DOCKER_VERSION/(2)
+shell         = open a shell in a image (DOCKER_IMAGE/(1),DOCKER_VERSION/(2)
+attach        = attach to a running container NAME viewing/interacting with PID 1
+exec          = exec a process inside the container NAME alongside PID 1
 running       = show running containers only
 all           = show running and stopped containers
-stop          = stop a container by LABEL/ID (1)
-delete        = delete a container by LABEL/ID (1)
-cp            = copy a file out of the container LABEL/ID (1) container path (2) destination (3) default = "."
+stop          = stop a container by NAME/ID (1)
+delete        = delete a container by NAME/ID (1)
+cp            = copy a file out of the container NAME/ID (1) container path (2) destination (3) default = "."
 
 arg/volume    = mount volume argument HOST_PATH (1) CONTAINER_PATH (2)
 arg/daemon    = run detached in the background
