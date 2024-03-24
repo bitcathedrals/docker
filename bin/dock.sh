@@ -269,7 +269,7 @@ case $1 in
     echo "--name $1"
   ;;
   "arg/shell")
-    echo "-it bash"
+    echo "-it /bin/bash"
   ;;
   *|"help")
     cat <<HELP
