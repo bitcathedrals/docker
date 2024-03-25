@@ -8,7 +8,7 @@ case $1 in
 
     if [[ -z $label ]]
     then
-      echo >/dev/stderr "dock-registry.sh:  \"label\" not specified. exiting."
+      echo >/dev/stderr "dock-image.sh:  \"label\" not specified. exiting."
       exit 1.
     fi
 
@@ -23,13 +23,13 @@ case $1 in
 
     if [[ -z $image ]]
     then
-      echo >/dev/stderr "dock-registry.sh: pull \"image\" not specified. exiting."
+      echo >/dev/stderr "dock-image.sh: pull \"image\" not specified. exiting."
       exit 1.
     fi
 
     if [[ -z $version ]]
     then
-      echo >/dev/stderr "dock-registry.sh: pull \"version\" not specified. exiting."
+      echo >/dev/stderr "dock-image.sh: pull \"version\" not specified. exiting."
       exit 1.
     fi
 
@@ -64,7 +64,7 @@ case $1 in
 
     if [[ -z $label ]]
     then
-      echo >/dev/stderr "dock-registry.sh: label (1) not specified. exiting."
+      echo >/dev/stderr "dock-image.sh: label (1) not specified. exiting."
       exit 1.
     fi
 
@@ -77,7 +77,7 @@ case $1 in
 
     if [[ -z $image ]]
     then
-      echo >/dev/stderr "dock-registry.sh: search image (1) not specified. exiting."
+      echo >/dev/stderr "dock-image.sh: search image (1) not specified. exiting."
       exit 1.
     fi
 
@@ -99,7 +99,7 @@ case $1 in
 
     if [[ -z $image ]]
     then
-      echo >/dev/stderr "dock-registry.sh: delete image (1) not specified. exiting."
+      echo >/dev/stderr "dock-image.sh: delete image (1) not specified. exiting."
       exit 1.
     fi
 
@@ -139,6 +139,8 @@ case $1 in
   ;;
   *|"help")
 cat <<HELP
+dock-image.sh
+
 pull       = IMAGE,VERSION pull IMAGE:VERSION
 images     = show images
 dangling   = show dangling images
