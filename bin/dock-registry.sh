@@ -1,6 +1,19 @@
 #! /usr/bin/env bash
 
 case $1 in
+  "push")
+    shift
+
+    label=$1
+
+    if [[ -z $label ]]
+    then
+      echo >/dev/stderr "dock-registry.sh:  \"label\" not specified. exiting."
+      exit 1.
+    fi
+
+    docker image push $label
+  ;;
   "pull")
     shift
 
