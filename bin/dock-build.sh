@@ -4,6 +4,8 @@ DOCKER_PLATFORMS="linux/amd64,linux/arm64,linux/arm/v7"
 
 BUILDER="uber"
 
+test -f python.sh && source python.sh
+
 case $1 in
   "version")
     docker buildx version
@@ -42,8 +44,6 @@ case $1 in
   "build")
     shift
 
-    test -f python.sh && source python.sh
-
     if [[ -n $DOCKER_USER ]]
     then
       user=$DOCKER_USER
@@ -79,6 +79,8 @@ case $1 in
       echo >/dev/stderr "dock-build.sh: dockfile - version argument not given. exiting."
       exit 1
     fi
+
+    echo /dev/stderr "dock-build.sh build - [$user/$name:$version] $DOCKER_PLATFORMS"
 
     if docker buildx build --builder=uber -t "$user/$name:$version" --platform="$DOCKER_PLATFORMS" --push .
     then
