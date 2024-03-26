@@ -21,16 +21,6 @@ case $1 in
       shift
     fi
 
-    version=""
-
-    if [[ -n $DOCKER_VERSION ]]
-    then
-      version=$DOCKER_VERSION
-    else
-      version=$1
-      shift
-    fi
-
     name=""
 
     if [[ -n $DOCKER_NAME ]]
@@ -47,19 +37,13 @@ case $1 in
       exit 1
     fi
 
-    if [[ -z $version ]]
-    then
-      echo >/dev/stderr "dock.sh: run - either DOCKER_VERSION or arg(2|1 if DOCKER_IMAGE) not specified. exiting."
-      exit 1
-    fi
-
     if [[ -z $name ]]
     then
-      echo >/dev/stderr "dock.sh: run - either DOCKER_NAME or arg(3|1 if DOCKER_NAME) not specified. exiting."
+      echo >/dev/stderr "dock.sh: run - either DOCKER_NAME or arg(2|1 if DOCKER_NAME) not specified. exiting."
       exit 1
     fi
 
-    eval "docker run ${image}:${version} --name $name $*"
+    eval "docker run --name $name ${image} $*"
   ;;
   "start")
     shift
@@ -125,6 +109,7 @@ case $1 in
    eval "docker ps $*"
   ;;
   "all")
+    shift
     eval "docker ps -a $*"
   ;;
   "stop")
@@ -277,7 +262,6 @@ docker.sh
 login         = login to docker account
 version       = show docker version
 run           = create & start container (DOCKER_IMAGE/(1),DOCKER_VERSION/(2)
-shell         = open a shell in a image (DOCKER_IMAGE/(1),DOCKER_VERSION/(2)
 attach        = attach to a running container NAME viewing/interacting with PID 1
 exec          = exec a process inside the container NAME alongside PID 1
 running       = show running containers only
