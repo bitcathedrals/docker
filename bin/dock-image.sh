@@ -1,5 +1,7 @@
 #! /usr/bin/env bash
 
+test -f python.sh && source python.sh
+
 case $1 in
   "push")
     shift
@@ -25,7 +27,7 @@ case $1 in
       exit 1
     fi
 
-    docker pull "${image}"
+    docker pull "${DOCKER_USER}/${image}"
   ;;
   "images")
     shift
@@ -130,6 +132,12 @@ case $1 in
   "export")
     shift
 
+    if [[ -z $DOCKER_USER ]]
+    then
+      echo >/dev/null "dock-image.sh export - no image specified. exiting."
+      exit 1
+    fi
+
     name=$1
 
     if [[ -z $1 ]]
@@ -138,15 +146,18 @@ case $1 in
       exit 1
     fi
 
-    docker save $name >$name.tar
-    sha256sum ${name}.tar >${name}.tar.sha256
-    xz -z ${name}.tar
+    export_name=$(echo $name | tr -s ':' '_')
+
+    echo >/dev/stderr "dock-image.sh export ${DOCKER_USER}/${name} -> ${export_name}"
+    docker save ${DOCKER_USER}/$name >${export_name}.tar
+    sha256sum ${export_name}.tar >${export_name}.tar.sha256
+    xz -z ${export_name}.tar
   ;;
   *|"help")
 cat <<HELP
 dock-image.sh
 
-pull       = IMAGE,VERSION pull IMAGE:VERSION
+pull       = pull IMAGE:VERSION
 images     = show images
 dangling   = show dangling images
 prune      = prune dangling images
@@ -155,7 +166,7 @@ label      = list images with a matching label (1)
 search     = search by MATCH (1) "official" as a second argument restricts to official images.
 delete     = delete IMAGE (1)
 nuke       = delete all images! will require confirmation
-export     = export a image to a xz compressed archive with a sha256 checksum
+export     = export a image <image> to a xz compressed archive with a sha256 checksum
 inspect    = inspect <image>
 HELP
   ;;
