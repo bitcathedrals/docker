@@ -11,8 +11,8 @@ case $1 in
   ;;
   "run")
     shift
-    image=""
 
+    image=""
     if [[ -n $DOCKER_IMAGE ]]
     then
       image=$DOCKER_IMAGE
@@ -22,7 +22,6 @@ case $1 in
     fi
 
     name=""
-
     if [[ -n $DOCKER_NAME ]]
     then
       name=$DOCKER_NAME
@@ -43,7 +42,42 @@ case $1 in
       exit 1
     fi
 
-    eval "docker run --name $name ${image} $*"
+    eval "docker run --name ${name} ${image} $*"
+  ;;
+  "pry")
+    shift
+
+    image=""
+    if [[ -n $DOCKER_IMAGE ]]
+    then
+      image=$DOCKER_IMAGE
+    else
+      image=$1
+      shift
+    fi
+
+    name=""
+    if [[ -n $DOCKER_NAME ]]
+    then
+      name=$DOCKER_NAME
+    else
+      name=$1
+      shift
+    fi
+
+    if [[ -z $image ]]
+    then
+      echo >/dev/stderr "dock.sh: pry - either DOCKER_IMAGE or arg(1) not specified. exiting."
+      exit 1
+    fi
+
+    if [[ -z $name ]]
+    then
+      echo >/dev/stderr "dock.sh: pry - either DOCKER_NAME or arg(2|1 if DOCKER_NAME) not specified. exiting."
+      exit 1
+    fi
+
+    eval "docker run -it --entrypoint /bin/bash --name ${name} ${image} $*"
   ;;
   "start")
     shift
@@ -209,7 +243,7 @@ case $1 in
 
     shift
 
-    container_path=$2
+ container_path=$2
 
     echo "-v ${host_path}:${container_path}"
   ;;
@@ -255,7 +289,7 @@ case $1 in
     echo "--name $1"
   ;;
   "arg/shell")
-    echo "-it /bin/bash"
+    echo "-i /bin/bash"
   ;;
   *|"help")
     cat <<HELP
@@ -263,6 +297,7 @@ docker.sh
 login         = login to docker account
 version       = show docker version
 run           = create & start container (DOCKER_IMAGE/(1),DOCKER_VERSION/(2)
+pry           = create & start container interactive with bash (DOCKER_IMAGE/(1),DOCKER_VERSION/(2)
 attach        = attach to a running container NAME viewing/interacting with PID 1
 exec          = exec a process inside the container NAME alongside PID 1
 running       = show running containers only
