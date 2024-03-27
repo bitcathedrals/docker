@@ -146,10 +146,19 @@ case $1 in
       exit 1
     fi
 
-    export_name=$(echo $name | tr -s ':' '_')
+    export_name=$(echo $name | tr -s ':' '_' | tr '-' '_')
 
     echo >/dev/stderr "dock-image.sh export ${DOCKER_USER}/${name} -> ${export_name}"
     docker save ${DOCKER_USER}/$name >${export_name}.tar
+
+    if [[ $? -ne 0 ]]
+    then
+      echo /dev/stderr "dock-image.sh export encountered \"save\" error. cannot continue. exiting."
+      rm ${export_name}.tar
+
+      exit 1
+    fi
+
     sha256sum ${export_name}.tar >${export_name}.tar.sha256
     xz -z ${export_name}.tar
   ;;
