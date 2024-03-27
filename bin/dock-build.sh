@@ -87,7 +87,9 @@ case $1 in
       exit 1
     fi
 
-    echo /dev/stderr "dock-build.sh build - [$user/$name:$version] $DOCKER_PLATFORMS"
+    test -d docker && cd docker
+
+    echo /dev/stderr "dock-build.sh build - ($PWD) [$user/$name:$version] $DOCKER_PLATFORMS"
 
     echo /dev/stderr "dock-build.sh build - ready?"
 
