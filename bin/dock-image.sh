@@ -97,10 +97,11 @@ case $1 in
   "delete")
     shift
 
+    image=$1
     if [[ -z $image ]]
     then
       echo >/dev/stderr "dock-image.sh: delete image (1) not specified. exiting."
-      exit 1.
+      exit 1
     fi
 
     docker rmi $image
@@ -135,7 +136,19 @@ case $1 in
     docker inspect $image
   ;;
   "export")
-    $0 images | grep -v REPOSITORY | tr -s ' ' | cut -d ' ' -f 1,2 | tr ' ' ':' | sed -e 's,^,dock-registry pull ,'
+    shift
+
+    name=$1
+
+    if [[ -z $1 ]]
+    then
+      echo >/dev/null "dock-image.sh export - no image specified. exiting."
+      exit 1
+    fi
+
+    docker save $name >$name.tar
+    sha256 ${name}.tar >${name}.tar.sh256
+    xz -z ${name}.tar
   ;;
   *|"help")
 cat <<HELP
@@ -150,7 +163,7 @@ label      = list images with a matching label (1)
 search     = search by MATCH (1) "official" as a second argument restricts to official images.
 delete     = delete IMAGE (1)
 nuke       = delete all images! will require confirmation
-export     = export a list of commands to install a set of docker images
+export     = export a image to a xz compressed archive with a sha256 checksum
 inspect    = inspect <image>
 HELP
   ;;
