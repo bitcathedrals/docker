@@ -73,11 +73,10 @@ case $1 in
     fi
 
     version=$1
-    if [[ -n $DOCKER_VERSION ]]
+
+    if [[ -z $version ]]
     then
       version=$DOCKER_VERSION
-    else
-      version=$1
       shift
     fi
 
@@ -106,7 +105,7 @@ case $1 in
     if docker buildx build --builder=uber -t "$user/$name:$version" --platform="$DOCKER_PLATFORMS" --push .
     then
       echo /dev/stderr "dock-build.sh build - success!"
-      echo "FROM $user/$name:$version"
+      echo "FROM $user/$name:$version" >Dockerfile.${name}-${version}
     else
       echo /dev/stderr "dock-build.sh build - failed!."
       exit 1
