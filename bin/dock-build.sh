@@ -73,6 +73,13 @@ case $1 in
     fi
 
     version=$1
+    if [[ -n $DOCKER_VERSION ]]
+    then
+      version=$DOCKER_VERSION
+    else
+      version=$1
+      shift
+    fi
 
     if [[ -z $version ]]
     then
@@ -81,6 +88,18 @@ case $1 in
     fi
 
     echo /dev/stderr "dock-build.sh build - [$user/$name:$version] $DOCKER_PLATFORMS"
+
+    echo /dev/stderr "dock-build.sh build - ready?"
+
+    read -p "Proceed? [y/n]: " proceed
+
+    if [[ $proceed = "y" ]]
+    then
+      echo /dev/stderr ">>> proceeding with release start!"
+    else
+      echo /dev/stderr ">>> ABORT! exiting now!"
+      exit 1
+    fi
 
     if docker buildx build --builder=uber -t "$user/$name:$version" --platform="$DOCKER_PLATFORMS" --push .
     then
