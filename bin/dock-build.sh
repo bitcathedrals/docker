@@ -31,6 +31,14 @@ case $1 in
   "info")
     shift
 
+    if [[ -n $DOCKER_USER ]]
+    then
+      user=$DOCKER_USER
+    else
+      user=$1
+      shift
+    fi
+
     name=$1
 
     if [[ -z $name ]]
@@ -39,7 +47,7 @@ case $1 in
       exit 1
     fi
 
-    docker history $name
+    docker history "${DOCKER_USER}/$name"
   ;;
   "build")
     shift
