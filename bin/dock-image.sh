@@ -9,7 +9,7 @@ case $1 in
     if [[ -z $label ]]
     then
       echo >/dev/stderr "dock-image.sh:  \"label\" not specified. exiting."
-      exit 1.
+      exit 1
     fi
 
     docker image push $label
@@ -19,21 +19,13 @@ case $1 in
 
     image=$1
 
-    version=$2
-
     if [[ -z $image ]]
     then
       echo >/dev/stderr "dock-image.sh: pull \"image\" not specified. exiting."
-      exit 1.
+      exit 1
     fi
 
-    if [[ -z $version ]]
-    then
-      echo >/dev/stderr "dock-image.sh: pull \"version\" not specified. exiting."
-      exit 1.
-    fi
-
-    docker pull "${image}:${version}"
+    docker pull "${image}"
   ;;
   "images")
     shift
@@ -65,7 +57,7 @@ case $1 in
     if [[ -z $label ]]
     then
       echo >/dev/stderr "dock-image.sh: label (1) not specified. exiting."
-      exit 1.
+      exit 1
     fi
 
     docker images --filter=label=${label}
@@ -78,7 +70,7 @@ case $1 in
     if [[ -z $image ]]
     then
       echo >/dev/stderr "dock-image.sh: search image (1) not specified. exiting."
-      exit 1.
+      exit 1
     fi
 
     shift
