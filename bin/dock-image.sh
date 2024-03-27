@@ -139,7 +139,7 @@ case $1 in
     fi
 
     docker save $name >$name.tar
-    sha256 ${name}.tar >${name}.tar.sh256
+    sha256sum ${name}.tar >${name}.tar.sha256
     xz -z ${name}.tar
   ;;
   *|"help")
