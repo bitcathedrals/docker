@@ -106,6 +106,7 @@ case $1 in
     eval "docker exec $name $*"
   ;;
   "running")
+   shift
    eval "docker ps $*"
   ;;
   "all")
