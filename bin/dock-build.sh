@@ -88,9 +88,9 @@ case $1 in
 
     test -d docker && cd docker
 
-    echo /dev/stderr "dock-build.sh build - ($PWD) [$user/$name:$version] $DOCKER_PLATFORMS"
+    echo >/dev/stderr "dock-build.sh build - ($PWD) [$user/$name:$version] $DOCKER_PLATFORMS"
 
-    echo /dev/stderr "dock-build.sh build - ready?"
+    echo >/dev/stderr "dock-build.sh build - ready?"
 
     read -p "Proceed? [y/n]: " proceed
 
