@@ -159,7 +159,7 @@ case $1 in
     eval "docker run $arguments ${image} $rest"
   ;;
   "pry")
-    image_only $@
+    image_and_arguments $@
     docker run -it --entrypoint /bin/bash "${image}"
   ;;
   "start")
@@ -197,7 +197,7 @@ case $1 in
     eval "docker rm $arguments $name"
   ;;
   "purge")
-    image_only $@
+    image_and_arguments $@
 
     for container in $(dock.sh all | grep ${image} | tr -s ' ' | cut -d ' ' -f 1)
     do
