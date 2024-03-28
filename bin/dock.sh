@@ -24,6 +24,12 @@ function make_args {
           arguments="${arguments} -u $1"
           shift
         ;;
+        "arg/groups")
+          shift
+
+          arguments="${arguments} --group-add $1"
+          shift
+        ;;
         "arg/volume")
           shift
 
@@ -301,7 +307,8 @@ arg/shell     = invoke bash attached to terminal
 arg/port      = map port:port
 arg/name      = specify a name
 arg/dry       = dry run, echo the command instead of running it
-arg/user      = run as <USER>
+arg/user      = run as <USER> or <USER>:GROUP
+arg/groups    = extra groups <GROUP,...>
 HELP
   ;;
 esac
