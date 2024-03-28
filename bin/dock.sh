@@ -137,7 +137,10 @@ function image_only {
     image="${image}:${DOCKER_VERSION}"
   fi
 
-  image="${user}/${image}"
+  if [[ $command != 'purge' ]]
+  then
+     image="${user}/${image}"
+  fi
 
   make_args $@
 }
@@ -214,6 +217,15 @@ case $1 in
     name_only $@
     eval "docker rm $arguments $name"
   ;;
+  "purge")
+    image_only $@
+
+    for container in $(dock.sh all | grep ${image} | tr -s ' ' | cut -d ' ' -f 1)
+    do
+      echo "purging container: $container"
+      dock.sh delete ${container}
+    done
+  ;;
   "cp-out")
     name_only $@
 
@@ -235,6 +247,7 @@ running       = show running containers only
 all           = show running and stopped containers
 stop          = stop a container by <NAME/ID>
 delete        = delete a container by <NAME/ID>
+purge         = delete all containers by <IMAGE>
 cp            = copy a file out of the container <NAME> <container path> <destination>
 
 arg/volume    = mount volume argument <HOST_PATH> <CONTAINER_PATH>
