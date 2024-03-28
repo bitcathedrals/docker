@@ -8,116 +8,96 @@ function make_args {
 
   if [[ -n $1 ]]
   then
-    case $1 in
-      "arg/volume")
-        shift
-        host_path=$1
+    while [[ -n $1 ]]
+    do
+      case $1 in
+        "arg/volume")
+          shift
 
-        if [[ -z $host_path ]]
-        then
-          echo >/dev/stderr "dock.sh: arg/volume - no arg given."
-          exit 1
-        fi
-
-        if [[ ! -e $host_path ]]
-        then
-          echo >/dev/stderr "dock.sh: arg/volume - host path does not exist. exiting."
-          exit 1
-        fi
-
-        shift
-        container_path=$2
-
-        arguments="-v ${host_path}:${container_path}"
-      ;;
-      "arg/shell")
-        arguments="-i /bin/bash"
-        shift
-      ;;
-      "arg/daemon")
-        arguments="-d"
-        shift
-      ;;
-      "arg/restart")
-        shift
-
-        restart=""
-
-        if [[ -z $1 ]]
-        then
-          echo >/dev/stderr "dock.sh: arg/daemon - no restart option specified. exiting."
-          exit 1
-        fi
-
-        case $1 in
-          "always")
-            echo "--restart always"
-            ;;
-          "unless")
-            echo "--restart unless-stopped"
-            ;;
-          "failed")
-            echo "--restart on-failure"
-          ;;
-          *)
-            echo >/dev/stderr "dock.sh: arg/restart unknown option $1"
+          host_path=$1
+          if [[ -z $host_path ]]
+          then
+            echo >/dev/stderr "dock.sh: arg/volume - no arg given."
             exit 1
-          ;;
-        esac
-      ;;
-    esac
-  else
-    arguments=$*
+          fi
+
+          if [[ ! -e $host_path ]]
+          then
+            echo >/dev/stderr "dock.sh: arg/volume - host path does not exist. exiting."
+            exit 1
+          fi
+
+          shift
+          container_path=$1
+
+          arguments="${arguments} -v ${host_path}:${container_path}"
+          shift
+        ;;
+        "arg/shell")
+          arguments="${arguments} -i /bin/bash"
+          shift
+        ;;
+        "arg/daemon")
+          arguments="${arguments} -d"
+          shift
+        ;;
+        "arg/restart")
+          shift
+
+          restart=""
+
+          if [[ -z $1 ]]
+          then
+            echo >/dev/stderr "dock.sh: arg/daemon - no restart option specified. exiting."
+            exit 1
+          fi
+
+          case $1 in
+            "always")
+              restart="always"
+            ;;
+            "unless")
+              restart="unless-stopped"
+             ;;
+            "failed")
+              restart="on-failure"
+            ;;
+            *)
+              echo >/dev/stderr "dock.sh: arg/restart unknown option $1"
+              exit 1
+            ;;
+          esac
+
+          arguments="${arguments} --restart ${restart}"
+          shift
+        ;;
+        "arg/port")
+          shift
+
+          arguments="${arguments} --publish $1"
+          shift
+        ;;
+
+        "arg/name")
+          shift
+
+          arguments="${arguments} --name $1"
+          shift
+        ;;
+        *)
+          rest=$*
+          return
+        ;;
+      esac
+    done
+
+    rest=$*
   fi
+
+  rest=$*
 }
 
-function image_and_name {
-  command=$1
-  shift
-
-  user=$DOCKER_USER
-  if [[ -z $user ]]
-  then
-    echo >/dev/stderr "dock.sh: $command - \"user\" not specified. exiting."
-    exit 1
-  fi
-
-  image=$DOCKER_IMAGE
-
-  if [[ -z $image ]]
-  then
-    image="${BUILD_NAME}:${DOCKER_VERSION}"
-  else
-    image="${image}:${DOCKER_VERSION}"
-  fi
-
-  image="${user}/${image}"
-
-  name=""
-  if [[ -n $1 ]]
-  then
-    name=$1
-    shift
-  else
-    name=$DOCKER_NAME
-  fi
-
-  if [[ -z $image ]]
-  then
-    echo >/dev/stderr "dock.sh: $command - image (1) not specified. exiting."
-    exit 1
-  fi
-
-  if [[ -z $name ]]
-  then
-    echo >/dev/stderr "dock.sh: $command - name (2) not specified. exiting."
-    exit 1
-  fi
-
-  make_args $@
-}
-
-function image_only {
+function image_and_arguments {
   command=$1
   shift
 
@@ -145,17 +125,16 @@ function image_only {
   make_args $@
 }
 
-function name_only {
+function name_and_arguments {
   command=$1
   shift
 
-  name=""
-  if [[ -n $1 ]]
+  name=$DOCKER_NAME
+
+  if [[ -z $name ]]
   then
     name=$1
     shift
-  else
-    name=$DOCKER_NAME
   fi
 
   if [[ -z $name ]]
@@ -175,32 +154,32 @@ case $1 in
     docker login
   ;;
   "run")
-    image_and_name $@
+    image_and_arguments $@
 
-    eval "docker run $arguments --name ${name} ${image} $*"
+    eval "docker run $arguments ${image} $rest"
   ;;
   "pry")
     image_only $@
     docker run -it --entrypoint /bin/bash "${image}"
   ;;
   "start")
-    name_only $@
+    name_and_arguments $@
 
-    if [[ $arguments == "-i" ]]
+    args=""
+    
+    if [[ $rest == "-i" ]]
     then
       args="-i -a"
-    else
-      args="$arguments"
     fi
 
-    eval "docker start $args $name"
+    eval "docker start $arguments $args $name"
   ;;
   "attach")
-    name_only $@
+    name_and_arguments $@
     eval "docker attach $arguments $name"
   ;;
   "exec")
-    name_only $@
+    name_and_arguments $@
     eval "docker exec $arguments $name"
   ;;
   "running")
@@ -210,11 +189,11 @@ case $1 in
     docker ps -a
   ;;
   "stop")
-    name_only $@
+    name_and_arguments $@
     eval "docker stop $arguments $name"
   ;;
   "delete")
-    name_only $@
+    name_and_arguments $@
     eval "docker rm $arguments $name"
   ;;
   "purge")
@@ -227,7 +206,7 @@ case $1 in
     done
   ;;
   "cp-out")
-    name_only $@
+    name_and_arguments $@
 
     source=`echo $arguments | cut -d ' ' -f 1`
     dest=`echo $arguments | cut -d ' ' -f 2`
@@ -254,6 +233,8 @@ arg/volume    = mount volume argument <HOST_PATH> <CONTAINER_PATH>
 arg/daemon    = run detached in the background
 arg/restart   = restart <always|unless|failed>
 arg/shell     = invoke bash attached to terminal
+arg/port      = map port:port
+arg/name      = specify a name
 HELP
   ;;
 esac
