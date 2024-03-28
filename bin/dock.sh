@@ -1,6 +1,168 @@
 #! /usr/bin/env bash
 
+test -f python.sh && source python.sh
 test -f docker.sh && source docker.sh
+
+function make_args {
+  arguments=""
+
+  if [[ -n $1 ]]
+  then
+    case $1 in
+      "arg/volume")
+        shift
+        host_path=$1
+
+        if [[ -z $host_path ]]
+        then
+          echo >/dev/stderr "dock.sh: arg/volume - no arg given."
+          exit 1
+        fi
+
+        if [[ ! -e $host_path ]]
+        then
+          echo >/dev/stderr "dock.sh: arg/volume - host path does not exist. exiting."
+          exit 1
+        fi
+
+        shift
+        container_path=$2
+
+        arguments="-v ${host_path}:${container_path}"
+      ;;
+      "arg/shell")
+        arguments="-i /bin/bash"
+        shift
+      ;;
+      "arg/daemon")
+        arguments="-d"
+        shift
+      ;;
+      "arg/restart")
+        shift
+
+        restart=""
+
+        if [[ -z $1 ]]
+        then
+          echo >/dev/stderr "dock.sh: arg/daemon - no restart option specified. exiting."
+          exit 1
+        fi
+
+        case $1 in
+          "always")
+            echo "--restart always"
+            ;;
+          "unless")
+            echo "--restart unless-stopped"
+            ;;
+          "failed")
+            echo "--restart on-failure"
+          ;;
+          *)
+            echo >/dev/stderr "dock.sh: arg/restart unknown option $1"
+            exit 1
+          ;;
+        esac
+      ;;
+    esac
+  else
+    arguments=$*
+  fi
+}
+
+function image_and_name {
+  command=$1
+  shift
+
+  user=$DOCKER_USER
+  if [[ -z $user ]]
+  then
+    echo >/dev/stderr "dock.sh: $command - \"user\" not specified. exiting."
+    exit 1
+  fi
+
+  image=$DOCKER_IMAGE
+
+  if [[ -z $image ]]
+  then
+    image="${BUILD_NAME}:${DOCKER_VERSION}"
+  else
+    image="${image}:${DOCKER_VERSION}"
+  fi
+
+  image="${user}/${image}"
+
+  name=""
+  if [[ -n $1 ]]
+  then
+    name=$1
+    shift
+  else
+    name=$DOCKER_NAME
+  fi
+
+  if [[ -z $image ]]
+  then
+    echo >/dev/stderr "dock.sh: $command - image (1) not specified. exiting."
+    exit 1
+  fi
+
+  if [[ -z $name ]]
+  then
+    echo >/dev/stderr "dock.sh: $command - name (2) not specified. exiting."
+    exit 1
+  fi
+
+  make_args $@
+}
+
+function image_only {
+  command=$1
+  shift
+
+  user=$DOCKER_USER
+  if [[ -z $user ]]
+  then
+    echo >/dev/stderr "dock.sh: $command - \"user\" not specified. exiting."
+    exit 1
+  fi
+
+  image=$DOCKER_IMAGE
+
+  if [[ -z $image ]]
+  then
+    image="${BUILD_NAME}:${DOCKER_VERSION}"
+  else
+    image="${image}:${DOCKER_VERSION}"
+  fi
+
+  image="${user}/${image}"
+
+  make_args $@
+}
+
+function name_only {
+  command=$1
+  shift
+
+  name=""
+  if [[ -n $1 ]]
+  then
+    name=$1
+    shift
+  else
+    name=$DOCKER_NAME
+  fi
+
+  if [[ -z $name ]]
+  then
+    echo >/dev/stderr "dock.sh: $command - name not specified. exiting."
+    exit 1
+  fi
+
+  make_args $@
+}
 
 case $1 in
   "version")
@@ -10,307 +172,75 @@ case $1 in
     docker login
   ;;
   "run")
-    shift
+    image_and_name $@
 
-    image=""
-    if [[ -n $DOCKER_IMAGE ]]
-    then
-      image=$DOCKER_IMAGE
-    else
-      image=$1
-      shift
-    fi
-
-    name=""
-    if [[ -n $DOCKER_NAME ]]
-    then
-      name=$DOCKER_NAME
-    else
-      name=$1
-      shift
-    fi
-
-    if [[ -z $image ]]
-    then
-      echo >/dev/stderr "dock.sh: run - either DOCKER_IMAGE or arg(1) not specified. exiting."
-      exit 1
-    fi
-
-    if [[ -z $name ]]
-    then
-      echo >/dev/stderr "dock.sh: run - either DOCKER_NAME or arg(2|1 if DOCKER_NAME) not specified. exiting."
-      exit 1
-    fi
-
-    eval "docker run --name ${name} ${image} $*"
+    eval "docker run $arguments --name ${name} ${image} $*"
   ;;
   "pry")
-    shift
-
-    image=""
-    if [[ -n $DOCKER_IMAGE ]]
-    then
-      image=$DOCKER_IMAGE
-    else
-      image=$1
-      shift
-    fi
-
-    name=""
-    if [[ -n $DOCKER_NAME ]]
-    then
-      name=$DOCKER_NAME
-    else
-      name=$1
-      shift
-    fi
-
-    if [[ -z $image ]]
-    then
-      echo >/dev/stderr "dock.sh: pry - either DOCKER_IMAGE or arg(1) not specified. exiting."
-      exit 1
-    fi
-
-    if [[ -z $name ]]
-    then
-      echo >/dev/stderr "dock.sh: pry - either DOCKER_NAME or arg(2|1 if DOCKER_NAME) not specified. exiting."
-      exit 1
-    fi
-
-    eval "docker run -it --entrypoint /bin/bash --name ${name} ${image} $*"
+    image_only $@
+    docker run -it --entrypoint /bin/bash "${image}"
   ;;
   "start")
-    shift
-    name=""
+    name_only $@
 
-    if [[ -n $DOCKER_NAME ]]
+    if [[ $arguments == "-i" ]]
     then
-      name=$DOCKER_NAME
+      args="-i -a"
     else
-      name=$1
-      shift
+      args="$arguments"
     fi
 
-    if [[ -z $name ]]
-    then
-      echo >/dev/stderr "dock.sh: start - name/id is missing. exiting."
-      exit 1
-    fi
-
-    eval "docker start $name $*"
+    eval "docker start $args $name"
   ;;
   "attach")
-    shift
-    name=""
-
-    if [[ -n $DOCKER_NAME ]]
-    then
-      name=$DOCKER_NAME
-    else
-      name=$1
-      shift
-    fi
-
-    if [[ -z $name ]]
-    then
-      echo >/dev/stderr "dock.sh: attach - name/id is missing. exiting."
-      exit
-    fi
-
-    eval "docker attach $name $*"
+    name_only $@
+    eval "docker attach $arguments $name"
   ;;
   "exec")
-    shift
-    name=""
-
-    if [[ -n $DOCKER_NAME ]]
-    then
-      name=$DOCKER_NAME
-    else
-      name=$1
-      shift
-    fi
-
-    if [[ -z $name ]]
-    then
-      echo >/dev/stderr "dock.sh: exec - name/id is missing. exiting."
-      exit
-    fi
-
-    eval "docker exec $name $*"
+    name_only $@
+    eval "docker exec $arguments $name"
   ;;
   "running")
-   shift
-   eval "docker ps $*"
+    docker ps
   ;;
   "all")
-    shift
-    eval "docker ps -a $*"
+    docker ps -a
   ;;
   "stop")
-    shift
-    name=""
-
-    if [[ -n $DOCKER_NAME ]]
-    then
-      name=$DOCKER_NAME
-    else
-      name=$1
-      shift
-    fi
-
-    if [[ -z $name ]]
-    then
-      echo >/dev/stderr "dock.sh: exec - name/id is missing. exiting."
-      exit 1
-    fi
-
-    eval "docker stop $name $*"
+    name_only $@
+    eval "docker stop $arguments $name"
   ;;
   "delete")
-    shift
-    name=""
-
-    if [[ -n $DOCKER_NAME ]]
-    then
-      name=$DOCKER_NAME
-    else
-      name=$1
-      shift
-    fi
-
-    if [[ -z $name ]]
-    then
-      echo >/dev/stderr "dock.sh: rm - name/id is missing. exiting."
-      exit 1
-    fi
-
-    eval "docker rm $name $*"
+    name_only $@
+    eval "docker rm $arguments $name"
   ;;
-  "cp")
-    shift
-    name=""
+  "cp-out")
+    name_only $@
 
-    if [[ -n $DOCKER_NAME ]]
-    then
-      name=$DOCKER_NAME
-    else
-      name=$1
-      shift
-    fi
+    source=`echo $arguments | cut -d ' ' -f 1`
+    dest=`echo $arguments | cut -d ' ' -f 2`
 
-    if [[ -z $name ]]
-    then
-      echo >/dev/stderr "dock.sh: cp - name/id is missing. exiting."
-      exit 1
-    fi
-
-    source_path=$1
-
-    if [[ -z $source_path ]]
-    then
-      echo >/dev/stderr "dock.sh: cp - source path is missing. exiting."
-      exit 1
-    fi
-
-    shift
-    destination_path=$1
-
-    if [[ -z $destination_path ]]
-    then
-      echo >/dev/stderr "dock.sh: cp - destination path is missing. using CWD - $PWD"
-      destination_path=$PWD
-    fi
-
-    eval "docker cp "$name:$source_path" $destination_path $*"
-  ;;
-  "arg/volume")
-    shift
-
-    host_path=$1
-
-    if [[ -z $host_path ]]
-    then
-      echo >/dev/stderr "dock.sh: arg/volume - no arg given."
-      exit 1
-    fi
-
-    if [[ -e $host_path ]]
-    then
-      echo >/dev/stderr "dock.sh: arg/volume - host path is missing. exiting."
-      exit 1
-    fi
-
-    shift
-
- container_path=$2
-
-    echo "-v ${host_path}:${container_path}"
-  ;;
-  "arg/daemon")
-    echo "-d"
-  ;;
-  "arg/restart")
-    shift
-
-    restart=""
-
-    if [[ -z $1 ]]
-    then
-      echo >/dev/stderr "no restart option specified. exiting."
-      exit 1
-    fi
-
-    case $1 in
-      "restart")
-        echo "--restart always"
-      ;;
-      "unless")
-        echo "--restart unless-stopped"
-      ;;
-      "failure")
-        echo "--restart on-failure"
-      ;;
-      *)
-        echo >/dev/stderr "unknown option $1"
-        exit 1
-      ;;
-    esac
-  ;;
-  "arg/name")
-    name=""
-
-    if [[ -z $1 ]]
-    then
-      echo >/dev/stderr "dock.sh: no name given. exiting."
-      exit 1
-    fi
-
-    echo "--name $1"
-  ;;
-  "arg/shell")
-    echo "-i /bin/bash"
+    eval "docker cp \"$name:$source\" $dest"
   ;;
   *|"help")
     cat <<HELP
 docker.sh
 login         = login to docker account
 version       = show docker version
-run           = create & start container (DOCKER_IMAGE/(1),DOCKER_VERSION/(2)
-pry           = create & start container interactive with bash (DOCKER_IMAGE/(1),DOCKER_VERSION/(2)
-attach        = attach to a running container NAME viewing/interacting with PID 1
-exec          = exec a process inside the container NAME alongside PID 1
+run           = create & start container <NAME>
+pry           = create & start container interactive with bash
+attach        = attach to a running container <NAME> viewing/interacting with PID 1
+exec          = exec a process inside the container <NAME> alongside PID 1
 running       = show running containers only
 all           = show running and stopped containers
-stop          = stop a container by NAME/ID (1)
-delete        = delete a container by NAME/ID (1)
-cp            = copy a file out of the container NAME/ID (1) container path (2) destination (3) default = "."
+stop          = stop a container by <NAME/ID>
+delete        = delete a container by <NAME/ID>
+cp            = copy a file out of the container <NAME> <container path> <destination>
 
-arg/volume    = mount volume argument HOST_PATH (1) CONTAINER_PATH (2)
+arg/volume    = mount volume argument <HOST_PATH> <CONTAINER_PATH>
 arg/daemon    = run detached in the background
-arg/restart   = restart option always|unless-stopped|restart-on-failure
-arg/name      = <name>
-arg/shell     = "invoke bash attached to terminal
+arg/restart   = restart <always|unless|failed>
+arg/shell     = invoke bash attached to terminal
 HELP
   ;;
 esac
