@@ -98,7 +98,7 @@ case $1 in
       exit 1
     fi
 
-    docker rmi $image
+    docker rmi ${image}
   ;;
   "nuke")
     shift
@@ -127,7 +127,7 @@ case $1 in
       exit 1
     fi
 
-    docker inspect $image
+    docker inspect ${image}
   ;;
   "export")
     shift
