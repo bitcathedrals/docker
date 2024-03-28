@@ -3,6 +3,8 @@
 test -f python.sh && source python.sh
 test -f docker.sh && source docker.sh
 
+dry_run='false'
+
 function make_args {
   arguments=""
 
@@ -11,6 +13,11 @@ function make_args {
     while [[ -n $1 ]]
     do
       case $1 in
+        "arg/dry")
+          shift
+
+          dry_run='true'
+        ;;
         "arg/volume")
           shift
 
@@ -156,31 +163,59 @@ case $1 in
   "run")
     image_and_arguments $@
 
-    eval "docker run $arguments ${image} $rest"
+    if [[ $dry_run == 'true' ]]
+    then
+      echo "docker run $arguments ${image} ${rest}"
+    else
+      eval "docker run $arguments ${image} ${rest}"
+    fi
   ;;
   "pry")
     image_and_arguments $@
-    docker run -it --entrypoint /bin/bash "${image}"
+
+    if [[ $dry_run == 'true' ]]
+    then
+      echo "docker run -it --entrypoint /bin/bash ${image}"
+    else
+      docker run -it --entrypoint /bin/bash ${image}
+    fi
   ;;
   "start")
     name_and_arguments $@
 
     args=""
-    
+
     if [[ $rest == "-i" ]]
     then
       args="-i -a"
     fi
 
-    eval "docker start $arguments $args $name"
+    if [[ $dry_run == 'true' ]]
+    then
+      echo "docker start ${arguments} ${args} ${name}"
+    else
+      eval "docker start ${arguments} ${args} ${name}"
+    fi
   ;;
   "attach")
     name_and_arguments $@
-    eval "docker attach $arguments $name"
+
+    if [[ $dry_run == 'true' ]]
+    then
+      echo "docker attach ${arguments} ${name} ${rest}"
+    else
+      eval "docker attach ${arguments} ${name} ${rest}"
+    fi
   ;;
   "exec")
     name_and_arguments $@
-    eval "docker exec $arguments $name"
+
+    if [[ $dry_run == 'true' ]]
+    then
+      echo "docker exec ${arguments} ${name}"
+    else
+      eval "docker exec ${arguments} ${name}"
+    fi
   ;;
   "running")
     docker ps
@@ -190,28 +225,52 @@ case $1 in
   ;;
   "stop")
     name_and_arguments $@
-    eval "docker stop $arguments $name"
+
+    if [[ $dry_run == 'true' ]]
+    then
+      echo "docker stop ${arguments} ${name} ${rest}"
+    else
+      eval "docker stop ${arguments} ${name} ${rest}"
+    fi
   ;;
   "delete")
     name_and_arguments $@
-    eval "docker rm $arguments $name"
+
+    if [[ $dry_run == 'true' ]]
+    then
+      echo "docker rm ${arguments} ${name} ${rest}"
+    else
+      eval "docker rm ${arguments} ${name} ${rest}"
+    fi
   ;;
   "purge")
     image_and_arguments $@
 
+
     for container in $(dock.sh all | grep ${image} | tr -s ' ' | cut -d ' ' -f 1)
     do
       echo "purging container: $container"
-      dock.sh delete ${container}
+
+      if [[ $dry_run == 'true' ]]
+      then
+        echo "dock.sh delete ${container}"
+      else
+        dock.sh delete ${container}
+      fi
     done
   ;;
   "cp-out")
     name_and_arguments $@
 
-    source=`echo $arguments | cut -d ' ' -f 1`
-    dest=`echo $arguments | cut -d ' ' -f 2`
+    source=`echo $rest | cut -d ' ' -f 1`
+    dest=`echo $rest | cut -d ' ' -f 2`
 
-    eval "docker cp \"$name:$source\" $dest"
+    if [[ $dry_run == 'true' ]]
+    then
+      echo "docker cp ${arguments} \"${name}:${source}\" ${dest}"
+    else
+      eval "docker cp ${arguments} \"${name}:${source}\" ${dest}"
+    fi
   ;;
   *|"help")
     cat <<HELP
@@ -235,6 +294,7 @@ arg/restart   = restart <always|unless|failed>
 arg/shell     = invoke bash attached to terminal
 arg/port      = map port:port
 arg/name      = specify a name
+arg/dry       = dry run, echo the command instead of running it
 HELP
   ;;
 esac
