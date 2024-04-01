@@ -30,6 +30,51 @@ function make_args {
           arguments="${arguments} -e \"$1\""
           shift
         ;;
+        "arg/container-path")
+          shift
+
+          container=$1
+          shift
+
+          if [[ -z $container ]]
+          then
+            echo >/dev/stderr "dock.sh: arg/container-path - container name not given. exiting."
+            exit 1
+          fi
+
+          path=$1
+          shift
+
+          if [[ -z $path ]]
+          then
+            echo >/dev/stderr "dock.sh: arg/container-path - path not given. exiting."
+            exit 1
+          fi
+
+          arguments="${arguments} \"$container:$path\""
+          shift
+        ;;
+        "arg/host-path")
+          shift
+
+          path=$1
+          shift
+
+          if [[ -z $path ]]
+          then
+            echo >/dev/stderr "dock.sh: arg/host-path - path not given. exiting."
+            exit 1
+          fi
+
+          if [[ ! -e $path ]]
+          then
+            echo >/dev/stderr "dock.sh: arg/host-path - path does not exist. exiting."
+            exit 1
+          fi
+
+          arguments="${arguments} \"$path\""
+          shift
+        ;;
         "arg/groups")
           shift
 
@@ -306,17 +351,14 @@ case $1 in
       docker volume create $name
     fi
   ;;
-  "cp-out")
+  "cp")
     name_and_arguments $@
-
-    source=`echo $rest | cut -d ' ' -f 1`
-    dest=`echo $rest | cut -d ' ' -f 2`
 
     if [[ $dry_run == 'true' ]]
     then
-      echo "docker cp ${arguments} \"${name}:${source}\" ${dest}"
+      echo "docker cp ${arguments}"
     else
-      eval "docker cp ${arguments} \"${name}:${source}\" ${dest}"
+      eval "docker cp ${arguments}"
     fi
   ;;
   "volumes")
@@ -399,7 +441,7 @@ all           = show running and stopped containers
 stop          = stop a container by <NAME/ID>
 delete        = delete a container by <NAME/ID>
 purge         = delete all containers by <IMAGE>
-cp            = copy a file out of the container <NAME> <container path> <destination>
+cp            = copy a file in/out use <arg/container-path> <arg/host-path> or reversed args
 volumes       = show volumes
 
 [compose]
@@ -412,14 +454,17 @@ halt     = stop the compose containers
 restart  = restart the compose containers
 list     = list compose container sets
 
-arg/env       = specify VAR=VALUE as a environment variable
+arg/container-path  = specify <CONTAINER> <PATH> as a in container path cp
+arg/host-path       = specify <PATH> as a host path for cp
+
+arg/env       = specify <VAR=VALUE> as a environment variable
 arg/mount     = mount volume <VOL> <MOUNT>
 arg/daemon    = run containers detached in the background
 arg/detatch   = run docker compose in the background
 arg/restart   = restart <always|unless|failed>
 arg/shell     = invoke bash attached to terminal
 arg/port      = map <port:port>
-arg/name      = specify a name
+arg/name      = specify <name> for container
 arg/dry       = dry run, echo the command instead of running it
 arg/user      = run as <USER> or <USER>:GROUP
 arg/groups    = extra groups <GROUP,...>
