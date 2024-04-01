@@ -24,6 +24,12 @@ function make_args {
           arguments="${arguments} -u $1"
           shift
         ;;
+        "arg/env")
+          shift
+
+          arguments="${arguments} -e \"$1\""
+          shift
+        ;;
         "arg/groups")
           shift
 
@@ -98,7 +104,7 @@ function make_args {
         "arg/port")
           shift
 
-          arguments="${arguments} --publish $1"
+          arguments="${arguments} -p $1"
           shift
         ;;
 
@@ -406,12 +412,13 @@ halt     = stop the compose containers
 restart  = restart the compose containers
 list     = list compose container sets
 
+arg/env       = specify VAR=VALUE as a environment variable
 arg/mount     = mount volume <VOL> <MOUNT>
 arg/daemon    = run containers detached in the background
 arg/detatch   = run docker compose in the background
 arg/restart   = restart <always|unless|failed>
 arg/shell     = invoke bash attached to terminal
-arg/port      = map port:port
+arg/port      = map <port:port>
 arg/name      = specify a name
 arg/dry       = dry run, echo the command instead of running it
 arg/user      = run as <USER> or <USER>:GROUP
