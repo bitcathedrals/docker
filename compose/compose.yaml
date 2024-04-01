@@ -7,6 +7,6 @@ services:
       - 8080:8080
     volumes:
       - packages:/home/packages
-
+      - ./myfile.txt:/path/in/container/myfile.txt # this is a bind, changes in container reflected in host
 volumes:
   packages:
