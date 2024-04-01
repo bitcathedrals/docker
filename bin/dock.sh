@@ -394,6 +394,7 @@ stop          = stop a container by <NAME/ID>
 delete        = delete a container by <NAME/ID>
 purge         = delete all containers by <IMAGE>
 cp            = copy a file out of the container <NAME> <container path> <destination>
+volumes       = show volumes
 
 [compose]
 
