@@ -30,7 +30,7 @@ function make_args {
           arguments="${arguments} --group-add $1"
           shift
         ;;
-        "arg/volume")
+        "arg/mount")
           shift
 
           host_path=$1
@@ -384,7 +384,7 @@ halt     = stop the compose containers
 restart  = restart the compose containers
 list     = list compose container sets
 
-arg/volume    = mount volume argument <HOST_PATH> <CONTAINER_PATH>
+arg/mount     = mount volume argument <HOST_PATH> <CONTAINER_PATH>
 arg/daemon    = run containers detached in the background
 arg/detatch   = run docker compose in the background
 arg/restart   = restart <always|unless|failed>
