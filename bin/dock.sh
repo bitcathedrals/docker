@@ -60,6 +60,10 @@ function make_args {
           arguments="${arguments} -d"
           shift
         ;;
+        "arg/detach")
+          arguments="${arguments} --detach"
+          shift
+        ;;
         "arg/restart")
           shift
 
@@ -101,6 +105,18 @@ function make_args {
           shift
 
           arguments="${arguments} --name $1"
+          shift
+        ;;
+        "arg/compose")
+          shift
+
+          arguments="${arguments} -f $1"
+          shift
+        ;;
+        "arg/rmvol")
+          shift
+
+          arguments="${arguments} --volumes"
           shift
         ;;
         *)
@@ -284,8 +300,31 @@ case $1 in
       eval "docker cp ${arguments} \"${name}:${source}\" ${dest}"
     fi
   ;;
+  "up")
+    docker compose up ${arguments}
+  ;;
+  "down")
+    docker compose down ${arguments}
+  ;;
+  "ps")
+    docker compose ps ${arguments}
+  ;;
+  "top")
+    docker compose top ${arguments}
+  ;;
+  "halt")
+    docker compose stop ${arguments}
+  ;;
+  "restart")
+    docker compose restart ${arguments}
+  ;;
+  "list")
+    docker compose ls ${arguments}
+  ;;
   *|"help")
     cat <<HELP
+[containers]
+
 docker.sh
 login         = login to docker account
 version       = show docker version
@@ -300,8 +339,19 @@ delete        = delete a container by <NAME/ID>
 purge         = delete all containers by <IMAGE>
 cp            = copy a file out of the container <NAME> <container path> <destination>
 
+[compose]
+
+up       = bring up the services
+down     = stop the services
+ps       = show status of each service
+top      = show processes inside the services
+halt     = stop the compose containers
+restart  = restart the compose containers
+list     = list compose container sets
+
 arg/volume    = mount volume argument <HOST_PATH> <CONTAINER_PATH>
-arg/daemon    = run detached in the background
+arg/daemon    = run containers detached in the background
+arg/detatch   = run docker compose in the background
 arg/restart   = restart <always|unless|failed>
 arg/shell     = invoke bash attached to terminal
 arg/port      = map port:port
@@ -309,6 +359,8 @@ arg/name      = specify a name
 arg/dry       = dry run, echo the command instead of running it
 arg/user      = run as <USER> or <USER>:GROUP
 arg/groups    = extra groups <GROUP,...>
+arg/compose   = specify the compose file name
+arg/rmvol     = argument to compose down, delete volumes
 HELP
   ;;
 esac
