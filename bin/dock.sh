@@ -33,23 +33,24 @@ function make_args {
         "arg/mount")
           shift
 
-          host_path=$1
-          if [[ -z $host_path ]]
-          then
-            echo >/dev/stderr "dock.sh: arg/volume - no arg given."
-            exit 1
-          fi
-
-          if [[ ! -e $host_path ]]
-          then
-            echo >/dev/stderr "dock.sh: arg/volume - host path does not exist. exiting."
-            exit 1
-          fi
-
+          vol=$1
           shift
-          container_path=$1
 
-          arguments="${arguments} -v ${host_path}:${container_path}"
+          if [[ -z $vol ]]
+          then
+            echo >/dev/stderr "dock.sh: arg/mount - volume name not given. exiting."
+            exit 1
+          fi
+
+          mount_dir=$1
+
+          if [[ -z $mount_dir ]]
+          then
+            echo >/dev/stderr "dock.sh: arg/mount - mount point not given. exiting."
+            exit 1
+          fi
+
+          arguments="${arguments} -v ${vol}:${mount_dir}"
           shift
         ;;
         "arg/shell")
@@ -274,7 +275,6 @@ case $1 in
   "purge")
     image_and_arguments $@
 
-
     for container in $(dock.sh all | grep ${image} | tr -s ' ' | cut -d ' ' -f 1)
     do
       echo "purging container: $container"
@@ -286,6 +286,19 @@ case $1 in
         dock.sh delete ${container}
       fi
     done
+  ;;
+  "new")
+    shift
+
+    name=$1
+    shift
+
+    if [[ $dry_run == 'true' ]]
+    then
+      echo "docker volume create $name"
+    else
+      docker volume create $name
+    fi
   ;;
   "cp-out")
     name_and_arguments $@
@@ -384,7 +397,7 @@ halt     = stop the compose containers
 restart  = restart the compose containers
 list     = list compose container sets
 
-arg/mount     = mount volume argument <HOST_PATH> <CONTAINER_PATH>
+arg/mount     = mount volume <VOL> <MOUNT>
 arg/daemon    = run containers detached in the background
 arg/detatch   = run docker compose in the background
 arg/restart   = restart <always|unless|failed>
