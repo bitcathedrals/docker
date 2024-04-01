@@ -301,25 +301,60 @@ case $1 in
     fi
   ;;
   "up")
-    docker compose up ${arguments}
+    if [[ $dry_run == 'true' ]]
+    then
+      echo "docker compose up ${arguments}"
+    else
+      docker compose up ${arguments}
+    fi
   ;;
   "down")
-    docker compose down ${arguments}
+    if [[ $dry_run == 'true' ]]
+    then
+      echo "docker compose down ${arguments}"
+    else
+      docker compose down ${arguments}
+    fi
   ;;
   "ps")
-    docker compose ps ${arguments}
+    if [[ $dry_run == 'true' ]]
+    then
+      echo docker compose ps ${arguments}
+    else
+      docker compose ps ${arguments}
+    fi
   ;;
   "top")
-    docker compose top ${arguments}
+    if [[ $dry_run == 'true' ]]
+    then
+      echo "docker compose top ${arguments}"
+    else
+      docker compose top ${arguments}
+    fi
   ;;
   "halt")
-    docker compose stop ${arguments}
+    if [[ $dry_run == 'true' ]]
+    then
+      echo "docker compose stop ${arguments}"
+    else
+      docker compose stop ${arguments}
+    fi
   ;;
   "restart")
-    docker compose restart ${arguments}
+    if [[ $dry_run == 'true' ]]
+    then
+      echo "docker compose restart ${arguments}"
+    else
+      docker compose restart ${arguments}
+    fi
   ;;
   "list")
-    docker compose ls ${arguments}
+    if [[ $dry_run == 'true' ]]
+    then
+      echo "docker compose ls ${arguments}"
+    else
+      docker compose ls ${arguments}
+    fi
   ;;
   *|"help")
     cat <<HELP
