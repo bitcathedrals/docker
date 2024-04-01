@@ -351,6 +351,19 @@ case $1 in
       docker volume create $name
     fi
   ;;
+  "rmvol")
+    shift
+
+    name=$1
+    shift
+
+    if [[ $dry_run == 'true' ]]
+    then
+      echo "docker volume rm $name"
+    else
+      docker volume rm $name
+    fi
+  ;;
   "cp")
     name_and_arguments $@
 
@@ -442,7 +455,9 @@ stop          = stop a container by <NAME/ID>
 delete        = delete a container by <NAME/ID>
 purge         = delete all containers by <IMAGE>
 cp            = copy a file in/out use <arg/container-path> <arg/host-path> or reversed args
+new           = create new <VOLUME>
 volumes       = show volumes
+rmvol         = delete <VOLUME>
 
 [compose]
 
