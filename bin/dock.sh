@@ -313,6 +313,14 @@ case $1 in
       eval "docker cp ${arguments} \"${name}:${source}\" ${dest}"
     fi
   ;;
+  "volumes")
+    if [[ $dry_run == 'true' ]]
+    then
+      echo "docker volumes ls"
+    else
+      docker volumes ls
+    fi
+  ;;
   "up")
     if [[ $dry_run == 'true' ]]
     then
