@@ -7,7 +7,8 @@ dry_run='false'
 
 function make_args {
   arguments=""
-
+  rest=""
+  
   if [[ -n $1 ]]
   then
     while [[ -n $1 ]]
@@ -113,7 +114,7 @@ function make_args {
           shift
         ;;
         "arg/detach")
-          arguments="${arguments} --detach"
+          rest="${rest} --detach"
           shift
         ;;
         "arg/run-dir")
@@ -204,7 +205,7 @@ function make_args {
       esac
     done
 
-    rest=$*
+    rest="${rest} $*"
   fi
 
   rest=$*
