@@ -165,6 +165,12 @@ function make_args {
           arguments="${arguments} -f $1"
           shift
         ;;
+        "arg/attach")
+          shift
+
+          arguments="${arguments} --attach"
+          shift
+        ;;
         "arg/rmvol")
           shift
 
@@ -487,6 +493,7 @@ arg/user      = run as <USER> or <USER>:GROUP
 arg/groups    = extra groups <GROUP,...>
 arg/compose   = specify the compose file name
 arg/rmvol     = argument to compose down, delete volumes
+arg/attach    = attach to compose
 HELP
   ;;
 esac
