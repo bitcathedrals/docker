@@ -68,7 +68,7 @@ function make_args {
 
           if [[ ! -e $path ]]
           then
-            echo >/dev/stderr "dock.sh: arg/host-path - path does not exist. exiting."
+            echo >/dev/stderr "dock.sh: arg/host-path - path: $path does not exist. exiting."
             exit 1
           fi
 
@@ -115,6 +115,26 @@ function make_args {
         "arg/detach")
           arguments="${arguments} --detach"
           shift
+        ;;
+        "arg/run-dir")
+          shift
+
+          path=$1
+          shift
+
+          if [[ -z $path ]]
+          then
+            echo >/dev/stderr "dock.sh: arg/run-dir - path not given. exiting."
+            exit 1
+          fi
+
+          if [[ ! -d $path ]]
+          then
+            echo >/dev/stderr "dock.sh: arg/run-dir - directory: $path does not exist. exiting."
+            exit 1
+          fi
+
+          arguments="${arguments} --project-directory \"$path\""
         ;;
         "arg/restart")
           shift
@@ -534,6 +554,7 @@ arg/groups    = extra groups <GROUP,...>
 arg/compose   = specify the compose file name
 arg/rmvol     = argument to compose down, delete volumes
 arg/attach    = attach to compose
+arg/run-dir   = <DIR> to run compose in when specifying arg/compose
 HELP
   ;;
 esac
