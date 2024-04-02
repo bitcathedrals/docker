@@ -446,7 +446,7 @@ docker.sh
 login         = login to docker account
 version       = show docker version
 run           = create & start container <NAME>
-pry           = create & start container interactive with bash
+pry           = create & start container from <IMAGE> interactive with bash
 attach        = attach to a running container <NAME> viewing/interacting with PID 1
 exec          = exec a process inside the container <NAME> alongside PID 1
 running       = show running containers only
