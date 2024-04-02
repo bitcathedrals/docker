@@ -239,6 +239,10 @@ function name_and_arguments {
   make_args $@
 }
 
+function arguments_only {
+  make_args $@
+}
+
 case $1 in
   "version")
     docker version
@@ -350,6 +354,8 @@ case $1 in
     name=$1
     shift
 
+    arguments_only $@
+
     if [[ $dry_run == 'true' ]]
     then
       echo "docker volume create $name"
@@ -362,6 +368,8 @@ case $1 in
 
     name=$1
     shift
+
+    arguments_only $@
 
     if [[ $dry_run == 'true' ]]
     then
@@ -381,6 +389,10 @@ case $1 in
     fi
   ;;
   "volumes")
+    shift
+
+    arguments_only $@
+
     if [[ $dry_run == 'true' ]]
     then
       echo "docker volumes ls"
@@ -389,6 +401,10 @@ case $1 in
     fi
   ;;
   "up")
+    shift
+
+    arguments_only $@
+
     if [[ $dry_run == 'true' ]]
     then
       echo "docker compose up ${arguments}"
@@ -397,6 +413,10 @@ case $1 in
     fi
   ;;
   "down")
+    shift
+
+    arguments_only $@
+
     if [[ $dry_run == 'true' ]]
     then
       echo "docker compose down ${arguments}"
@@ -405,6 +425,10 @@ case $1 in
     fi
   ;;
   "ps")
+    shift
+
+    arguments_only $@
+
     if [[ $dry_run == 'true' ]]
     then
       echo docker compose ps ${arguments}
@@ -413,6 +437,10 @@ case $1 in
     fi
   ;;
   "top")
+    shift
+
+    arguments_only $@
+
     if [[ $dry_run == 'true' ]]
     then
       echo "docker compose top ${arguments}"
@@ -421,6 +449,10 @@ case $1 in
     fi
   ;;
   "halt")
+    shift
+
+    arguments_only $@
+
     if [[ $dry_run == 'true' ]]
     then
       echo "docker compose stop ${arguments}"
@@ -429,6 +461,10 @@ case $1 in
     fi
   ;;
   "restart")
+    shift
+
+    arguments_only $@
+
     if [[ $dry_run == 'true' ]]
     then
       echo "docker compose restart ${arguments}"
@@ -437,6 +473,10 @@ case $1 in
     fi
   ;;
   "list")
+    shift
+
+    arguments_only $@
+
     if [[ $dry_run == 'true' ]]
     then
       echo "docker compose ls ${arguments}"
