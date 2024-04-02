@@ -358,9 +358,9 @@ case $1 in
 
     if [[ $dry_run == 'true' ]]
     then
-      echo "docker volume create $name"
+      echo "docker volume ${arguments} create $name ${rest}"
     else
-      docker volume create $name
+      eval "docker volume ${arguments} create $name ${rest}"
     fi
   ;;
   "rmvol")
@@ -373,9 +373,9 @@ case $1 in
 
     if [[ $dry_run == 'true' ]]
     then
-      echo "docker volume rm $name"
+      echo "docker volume ${arguments} rm $name ${rest}"
     else
-      docker volume rm $name
+      eval "docker volume ${argumetns} rm $name ${rest}"
     fi
   ;;
   "cp")
@@ -383,9 +383,9 @@ case $1 in
 
     if [[ $dry_run == 'true' ]]
     then
-      echo "docker cp ${arguments}"
+      echo "docker cp ${arguments} ${rest}"
     else
-      eval "docker cp ${arguments}"
+      eval "docker cp ${arguments} ${rest}"
     fi
   ;;
   "volumes")
@@ -395,9 +395,9 @@ case $1 in
 
     if [[ $dry_run == 'true' ]]
     then
-      echo "docker volumes ls"
+      echo "docker volumes ${arguments} ls ${rest}"
     else
-      docker volumes ls
+      eval "docker volumes ${arguments} ls ${rest}"
     fi
   ;;
   "up")
@@ -407,9 +407,9 @@ case $1 in
 
     if [[ $dry_run == 'true' ]]
     then
-      echo "docker compose up ${arguments}"
+      echo "docker compose ${arguments} up ${rest}"
     else
-      docker compose up ${arguments}
+      eval "docker compose ${arguments} up ${rest}"
     fi
   ;;
   "down")
@@ -419,9 +419,9 @@ case $1 in
 
     if [[ $dry_run == 'true' ]]
     then
-      echo "docker compose down ${arguments}"
+      echo "docker compose ${arguments} down ${rest}"
     else
-      docker compose down ${arguments}
+      eval "docker compose ${arguments} down ${rest}"
     fi
   ;;
   "ps")
@@ -431,9 +431,9 @@ case $1 in
 
     if [[ $dry_run == 'true' ]]
     then
-      echo docker compose ps ${arguments}
+      echo "docker compose ${arguments} ps ${rest}"
     else
-      docker compose ps ${arguments}
+      eval "docker compose ${arguments} ps ${rest}"
     fi
   ;;
   "top")
@@ -443,9 +443,9 @@ case $1 in
 
     if [[ $dry_run == 'true' ]]
     then
-      echo "docker compose top ${arguments}"
+      echo "docker compose ${arguments} top ${rest}"
     else
-      docker compose top ${arguments}
+      eval "docker compose ${arguments} top ${rest}"
     fi
   ;;
   "halt")
@@ -455,9 +455,9 @@ case $1 in
 
     if [[ $dry_run == 'true' ]]
     then
-      echo "docker compose stop ${arguments}"
+      echo "docker compose ${arguments} stop ${rest}"
     else
-      docker compose stop ${arguments}
+      eval "docker compose ${arguments} stop ${rest}"
     fi
   ;;
   "restart")
@@ -467,9 +467,9 @@ case $1 in
 
     if [[ $dry_run == 'true' ]]
     then
-      echo "docker compose restart ${arguments}"
+      echo "docker compose ${arguments} restart ${rest}"
     else
-      docker compose restart ${arguments}
+      eval "docker compose ${arguments} restart ${rest}"
     fi
   ;;
   "list")
@@ -479,9 +479,9 @@ case $1 in
 
     if [[ $dry_run == 'true' ]]
     then
-      echo "docker compose ls ${arguments}"
+      echo "docker compose ${arguments} ls ${rest}"
     else
-      docker compose ls ${arguments}
+      eval "docker compose ${arguments} ls ${rest}"
     fi
   ;;
   *|"help")
