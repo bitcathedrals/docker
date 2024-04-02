@@ -469,6 +469,8 @@ halt     = stop the compose containers
 restart  = restart the compose containers
 list     = list compose container sets
 
+[args]
+
 arg/container-path  = specify <CONTAINER> <PATH> as a in container path cp
 arg/host-path       = specify <PATH> as a host path for cp
 
