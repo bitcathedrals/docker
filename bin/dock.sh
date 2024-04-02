@@ -208,7 +208,7 @@ function make_args {
     rest="${rest} $*"
   fi
 
-  rest=$*
+  rest="${rest} $*"
 }
 
 function image_and_arguments {
