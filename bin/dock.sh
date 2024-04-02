@@ -105,7 +105,7 @@ function make_args {
           shift
         ;;
         "arg/shell")
-          arguments="${arguments} -i /bin/bash"
+          arguments="${arguments} -it"
           shift
         ;;
         "arg/daemon")
@@ -292,9 +292,9 @@ case $1 in
 
     if [[ $dry_run == 'true' ]]
     then
-      echo "docker exec ${arguments} ${name}"
+      echo "docker exec ${arguments} ${name} ${rest}"
     else
-      eval "docker exec ${arguments} ${name}"
+      eval "docker exec ${arguments} ${name} ${rest}"
     fi
   ;;
   "running")
