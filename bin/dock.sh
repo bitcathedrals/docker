@@ -483,7 +483,7 @@ arg/host-path       = specify <PATH> as a host path for cp
 arg/env       = specify <VAR=VALUE> as a environment variable
 arg/mount     = mount volume <VOL> <MOUNT>
 arg/daemon    = run containers detached in the background
-arg/detatch   = run docker compose in the background
+arg/detach    = run docker compose in the background
 arg/restart   = restart <always|unless|failed>
 arg/shell     = invoke bash attached to terminal
 arg/port      = map <port:port>
