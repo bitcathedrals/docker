@@ -1,6 +1,17 @@
 #! /usr/bin/env bash
 
-test -f python.sh && source python.sh
+if [[ -f python.sh ]]
+then
+  source python.sh
+else
+  if [[ -f docker.sh ]]
+  then
+    source docker.sh
+  else
+    echo >/dev/stderr "dock-image.sh: no python.sh or docker.sh file found"
+    exit 1
+  fi
+fi
 
 case $1 in
   "push")
@@ -134,13 +145,13 @@ case $1 in
 
     if [[ -z $DOCKER_USER ]]
     then
-      echo >/dev/null "dock-image.sh export - no image specified. exiting."
+      echo >/dev/null "dock-image.sh export - no user specified. exiting."
       exit 1
     fi
 
     name=$1
 
-    if [[ -z $1 ]]
+    if [[ -z $name ]]
     then
       echo >/dev/null "dock-image.sh export - no image specified. exiting."
       exit 1
