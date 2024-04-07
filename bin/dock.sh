@@ -104,6 +104,60 @@ function make_args {
           arguments="${arguments} --group-add $1"
           shift
         ;;
+        "arg/bridge")
+          shift
+
+          arguments="${arguments} -d bridge"
+
+          subnet=$1
+
+          if [[ -z $subnet ]]
+          then
+            continue
+          else
+            shift
+          fi
+
+          arguments="${arguments} --subnet $subnet"
+
+          ip_range=$1
+
+          if [[ -z $ip_range ]]
+          then
+            continue
+          else
+            shift
+          fi
+
+          arguments="${arguments} --ip-range $ip_range"
+        ;;
+        "arg/overlay")
+          shift
+
+          arguments="${arguments} -d overlay"
+
+          subnet=$1
+
+          if [[ -z $subnet ]]
+          then
+            continue
+          else
+            shift
+          shift
+
+          arguments="${arguments} --subnet $subnet"
+
+          ip_range=$1
+
+          if [[ -z $ip_range ]]
+          then
+            continue
+          else
+            shift
+          fi
+
+          arguments="${arguments} --ip-range $ip_range"
+        ;;
         "arg/mount")
           shift
 
@@ -440,13 +494,51 @@ case $1 in
     fi
   ;;
   "info")
+    shift
+
+    kind=$1
+    shift
+
+    case $kind in
+      "container"|"volume"|"network")
+      ;;
+      *)
+        echo /dev/stderr "dock.sh info: unrecognized type: $kind. exiting."
+        exit 1
+        ;;
+    esac
+
     name_and_arguments $@
 
     if [[ $dry_run == 'true' ]]
     then
-      echo "docker container inspect -f json ${arguments} ${name} ${rest}"
+      echo "docker $kind inspect -f json ${arguments} ${name} ${rest}"
     else
-      eval "docker container inspect -f json ${arguments} ${name} ${rest}"
+      eval "docker $kind inspect -f json ${arguments} ${name} ${rest}"
+    fi
+  ;;
+  "port")
+    shift
+
+    kind=$1
+    shift
+
+    case $kind in
+      "container"|"compose")
+      ;;
+      *)
+        echo /dev/stderr "dock.sh port: unrecognized type: $1. exiting."
+        exit 1
+        ;;
+    esac
+
+    name_and_arguments $@
+
+    if [[ $dry_run == 'true' ]]
+    then
+      echo "docker $kind ${arguments} port ${name} ${rest}"
+    else
+      eval "docker $kind ${arguments} port ${name} ${rest}"
     fi
   ;;
   "running")
@@ -507,6 +599,46 @@ case $1 in
       echo "docker volume ${arguments} rm $name ${rest}"
     else
       eval "docker volume ${argumetns} rm $name ${rest}"
+    fi
+  ;;
+  "newnet")
+    identifier_and_arguments $@
+
+    if [[ $dry_run == 'true' ]]
+    then
+      echo "docker network ${arguments} create $name ${rest}"
+    else
+      eval "docker network ${arguments} create $name ${rest}"
+    fi
+  ;;
+  "rmnet")
+    identifier_and_arguments $@
+
+    if [[ $dry_run == 'true' ]]
+    then
+      echo "docker network ${arguments} rm $name ${rest}"
+    else
+      eval "docker network ${arguments} rm $name ${rest}"
+    fi
+  ;;
+  "prunenet")
+    arguments_only $@
+
+    if [[ $dry_run == 'true' ]]
+    then
+      echo "docker network ${arguments} prune ${rest}"
+    else
+      eval "docker network ${arguments} prune ${rest}"
+    fi
+  ;;
+  "lsnet")
+    arguments_only $@
+
+    if [[ $dry_run == 'true' ]]
+    then
+      echo "docker network ${arguments} ls ${rest}"
+    else
+      eval "docker network ${arguments} ls ${rest}"
     fi
   ;;
   "cp")
@@ -608,6 +740,13 @@ volumes       = show volumes
 newvol        = create new <VOLUME>
 rmvol         = delete <VOLUME>
 
+[NETWORK]
+
+newnet        = create new network <NAME>
+rmnet         = delete <NAME>
+prunenet      = prune unused networks
+port          = <container|compose> <name> show port mappings
+
 [compose]
 
 up       = bring up the services
@@ -644,6 +783,8 @@ arg/dir       = <DIR> to run compose in when specifying arg/compose
 arg/recreate  = for "create" force containers to be recreated even if config/image not changed
 arg/tail      = tail <COUNT> last lines of logs
 arg/follow    = follow log output
+arg/bridge    = bridge network create [SUBNET] [IP-RANGE]
+arg/overlay   = overlay network create [SUBNET] [IP-RANGE]
 HELP
 
 [TIPS]
