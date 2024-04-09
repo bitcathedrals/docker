@@ -143,7 +143,7 @@ function make_args {
             continue
           else
             shift
-          shift
+          fi
 
           arguments="${arguments} --subnet $subnet"
 
@@ -569,7 +569,7 @@ case $1 in
   "purge")
     image_and_arguments $@
 
-    for container in $(dock.sh all | grep ${image} | tr -s ' ' | cut -d ' ' -f 1)
+    for container in $(dock.sh running arg/all | grep ${image} | tr -s ' ' | cut -d ' ' -f 1)
     do
       echo "purging container: $container"
 
@@ -785,11 +785,12 @@ arg/tail      = tail <COUNT> last lines of logs
 arg/follow    = follow log output
 arg/bridge    = bridge network create [SUBNET] [IP-RANGE]
 arg/overlay   = overlay network create [SUBNET] [IP-RANGE]
-HELP
 
 [TIPS]
+
 * put compose for each service in the repository for that service, combine with multiple
   arg/compose options, and run in a arg/dir which is the running environment containing
   all the mounted config files.
+HELP
   ;;
 esac
