@@ -1,6 +1,6 @@
 #! /usr/bin/env bash
 
-DOCKER_PLATFORMS="linux/amd64,linux/arm64,linux/arm/v7"
+DOCKER_PLATFORMS="linux/amd64,linux/arm64"
 
 BUILDER="uber"
 
