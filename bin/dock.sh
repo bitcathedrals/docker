@@ -671,7 +671,7 @@ case $1 in
     fi
   ;;
   "purge")
-    image_and_arguments $@
+    resource_and_arguments $@
 
     for container in $(dock.sh running arg/all | grep ${image} | tr -s ' ' | cut -d ' ' -f 1)
     do
