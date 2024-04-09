@@ -604,7 +604,7 @@ case $1 in
       eval "docker $operation ${arguments} port ${rest}"
     fi
   ;;
-  "running")
+  "ps")
     arguments_only $@
 
     op='container'
@@ -673,7 +673,7 @@ case $1 in
   "purge")
     resource_and_arguments $@
 
-    for container in $(dock.sh running arg/all | grep ${resource} | tr -s ' ' | cut -d ' ' -f 1)
+    for container in $(dock.sh ps arg/all | grep ${resource} | tr -s ' ' | cut -d ' ' -f 1)
     do
       echo "purging container: $container"
 
@@ -843,7 +843,7 @@ run           = create & start container/compose <RESOURCE> <NAME> resource=defa
 
 exec          = exec a process inside the container/compose <NAME> [arg/service] alongside PID 1
 debug         = exec a bash inside the container/service <NAME> alongside PID 1
-running       = show running containers or compose services, need arg/compose with arg/name after to specify a compose
+ps            = show running containers or compose services, need arg/compose with arg/name after to show a compose
 logs          = show logs in follow mode for container/compose
 top           = show running processes
 port          = show port mappings for container/compose
