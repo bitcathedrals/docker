@@ -673,7 +673,7 @@ case $1 in
   "purge")
     resource_and_arguments $@
 
-    for container in $(dock.sh running arg/all | grep ${image} | tr -s ' ' | cut -d ' ' -f 1)
+    for container in $(dock.sh running arg/all | grep ${resource} | tr -s ' ' | cut -d ' ' -f 1)
     do
       echo "purging container: $container"
 
