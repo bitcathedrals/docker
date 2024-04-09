@@ -61,7 +61,7 @@ function make_args {
 
           if [[ -z $container ]]
           then
-            echo >/dev/stderr "dock.sh: arg/container-path - container name not given. exiting."
+            echo >/dev/stderr "dock.sh: arg/container - container name not given. exiting."
             exit 1
           fi
 
@@ -70,7 +70,7 @@ function make_args {
 
           if [[ -z $path ]]
           then
-            echo >/dev/stderr "dock.sh: arg/container-path - path not given. exiting."
+            echo >/dev/stderr "dock.sh: arg/container - path not given. exiting."
             exit 1
           fi
 
@@ -247,25 +247,34 @@ function make_args {
           arguments="${arguments} -p $1"
           shift
         ;;
-
         "arg/name")
           shift
 
-          arguments="${arguments} --name $1"
+          if [[ $compose == 'true' ]]
+          then
+            arguments="${arguments} -p $1"
+          else
+            arguments="${arguments} --name $1"
+          fi
+
           shift
         ;;
         "arg/compose")
           shift
+          compose='true'
 
-          arguments="${arguments} -f $1"
-          shift
-        ;;
+          if [[ -n $1 ]] && [[ -e $1 ]]
+          then
+            arguments="${arguments} -f $1"
+            shift
+          fi
+          ;;
         "arg/attach")
           shift
 
           arguments="${arguments} --attach"
           shift
-        ;;
+          ;;
         "arg/rmvol")
           shift
 
@@ -277,14 +286,6 @@ function make_args {
 
           arguments="${rest} --force-recreate"
           shift
-        ;;
-        "arg/tail")
-          shift
-
-          count=$1
-          shift
-
-          rest="${rest} --tail ${count}"
         ;;
         *)
           rest=$*
@@ -299,32 +300,91 @@ function make_args {
   rest="${rest} $*"
 }
 
-function image_and_arguments {
+resource=""
+name=""
+
+function resource_and_arguments {
   command=$1
   shift
 
-  user=$DOCKER_USER
-  if [[ -z $user ]]
+  resource=$1
+  shift
+
+  if [[ -z $resource ]]
   then
-    echo >/dev/stderr "dock.sh: $command - \"user\" not specified. exiting."
+    echo >/dev/stderr "dock.sh resource_and_arguments: no resource (1) specified. exiting."
     exit 1
   fi
 
-  image=$DOCKER_IMAGE
+  case $command in
+    "run")
+      echo >/dev/stderr "dock.sh: resource_and_arguments - requiring name argument (2)."
 
-  if [[ -z $image ]]
-  then
-    image="${BUILD_NAME}:${DOCKER_VERSION}"
-  else
-    image="${image}:${DOCKER_VERSION}"
-  fi
+      name=$1
+      shift
 
-  if [[ $command != 'purge' ]]
-  then
-     image="${user}/${image}"
-  fi
+      if [[ -z $name ]]
+      then
+        echo >/dev/stderr "dock.sh resource_and_arguments: no name (2) specified. exiting."
+        exit 1
+      fi
+      ;;
+    *)
+      echo >/dev/stderr "dock.sh: resource_and_arguments - proceeding with resource only (1)."
+      ;;
+  esac
 
   make_args $@
+
+  if [[ $compose == 'true' ]]
+  then
+    if [[ $resource != 'default' ]]
+    then
+      arguments="${arguments} -f $resource"
+    fi
+
+    if [[ $name != 'default' ]]
+    then
+      arguments="${arguments} -p $name"
+    fi
+
+    return
+  fi
+
+  default=$DOCKER_IMAGE
+
+  if [[ -n $default ]]
+  then
+    resource=$default
+  else
+    if [[ -n ${BUILD_NAME} ]]
+    then
+      if [[ -n ${DOCKER_VERSION} ]]
+      then
+        resource="${BUILD_NAME}:${DOCKER_VERSION}"
+      else
+        echo >/dev/stderr "dock.sh resource_and_arguments: no DOCKER_VERSION specified, using BUILD_NAME and argument (1) as version."
+        resource="${BUILD_NAME}:${resource}"
+      fi
+    else
+        echo >/dev/stderr "dock.sh resource_and_arguments: no BUILD_NAME specified, using argument as is."
+    fi
+  fi
+
+  if [[ $command == 'purge' ]]
+  then
+    return
+  fi
+
+  user=$DOCKER_USER
+
+  if [[ -z $user ]]
+  then
+    echo >/dev/stderr "dock.sh: resource_and_arguments - \"user\" not specified as DOCKER_USER. exiting."
+    exit 1
+  fi
+
+  resource="${user}/${resource}"
 }
 
 function name_and_arguments {
@@ -342,47 +402,6 @@ function name_and_arguments {
   if [[ -z $name ]]
   then
     echo >/dev/stderr "dock.sh: $command - name not specified. exiting."
-    exit 1
-  fi
-
-  make_args $@
-}
-
-service_operation=""
-service_name=""
-
-function service_arguments {
-  command=$1
-  shift
-
-  compose='true'
-
-  operation=$1
-  shift
-
-  if [[ -z $operation ]]
-  then
-    echo >/dev/stderr "dock.sh: service operation not specified. exiting."
-    exit 1
-  fi
-
-  case $operation in
-    "exec"|"logs"|"kill")
-      echo >/dev/stderr "dock.sh: configuring for service $operation."
-      service_operation=$operation
-    ;;
-    *)
-      echo >/dev/stderr "dock.sh: service operation not up|exec|logs. exiting."
-      exit 1
-    ;;
-  esac
-
-  service_name=$1
-  shift
-
-  if [[ -z $service_name ]]
-  then
-    echo >/dev/stderr "dock.sh: service name not specified. exiting."
     exit 1
   fi
 
@@ -415,27 +434,48 @@ case $1 in
     docker login
   ;;
   "run")
-    image_and_arguments $@
+    resource_and_arguments $@
+
+    if [[ $compose == 'true' ]]
+    then
+      eval "docker compose ${arguments} up ${rest}"
+      exit 0
+    fi
 
     if [[ $dry_run == 'true' ]]
     then
-      echo "docker container run ${arguments} ${image} ${rest}"
+      echo "docker container run ${arguments} ${resource} --name ${name} ${rest}"
     else
-      eval "docker container run ${arguments} ${image} ${rest}"
+      eval "docker container run ${arguments} ${resource} --name ${name} ${rest}"
     fi
   ;;
   "pry")
-    image_and_arguments $@
+    resource_and_arguments $@
+
+    docker inspect "pry" >/dev/null 2>&1
+
+    if [[ $? -eq 0 ]]
+    then
+      echo >/dev/stderr "dock.sh pry [container] \"pry\" exists, launching debug into existing container"
+      $0 debug pry
+      return
+    fi
 
     if [[ $dry_run == 'true' ]]
     then
-      echo "docker container run -it --entrypoint /bin/bash ${image} ${rest}"
+      echo "docker container run -it --entrypoint /bin/bash ${resource} --name \"pry\" ${rest}"
     else
-      eval "docker container run -it --entrypoint /bin/bash ${image} ${rest}"
+      eval "docker container run -it --entrypoint /bin/bash ${resource} --name \"pry\" ${rest}"
     fi
   ;;
   "start")
     name_and_arguments $@
+
+    if [[ $compose == 'true' ]]
+    then
+      eval "docker compose ${arguments} -p ${name} start ${rest}"
+      exit 0
+    fi
 
     args=""
 
@@ -464,31 +504,52 @@ case $1 in
   "exec")
     name_and_arguments $@
 
+    if [[ $compose == 'true' ]]
+    then
+      operation='compose'
+    else
+      operation='container'
+    fi
+
     if [[ $dry_run == 'true' ]]
     then
-      echo "docker container exec ${arguments} ${name} ${rest}"
+      echo "docker $operation exec ${arguments} ${name} ${rest}"
     else
-      eval "docker container exec ${arguments} ${name} ${rest}"
+      eval "docker $operation exec ${arguments} ${name} ${rest}"
     fi
   ;;
   "debug")
     name_and_arguments $@
 
+    if [[ $compose == 'true' ]]
+    then
+      operation='compose'
+    else
+      operation='container'
+    fi
+
     if [[ $dry_run == 'true' ]]
     then
-      echo "docker container exec ${arguments} -it ${name} /bin/bash ${rest}"
+      echo "docker $operation exec ${arguments} -it ${name} /bin/bash ${rest}"
     else
-      eval "docker container exec ${arguments} -it ${name} /bin/bash ${rest}"
+      eval "docker $operation exec ${arguments} -it ${name} /bin/bash ${rest}"
     fi
   ;;
   "logs")
     name_and_arguments $@
 
+    if [[ $compose == 'true' ]]
+    then
+      operation='compose'
+    else
+      operation='container'
+    fi
+
     if [[ $dry_run == 'true' ]]
     then
-      echo "docker container logs ${arguments} ${name} ${rest}"
+      echo "docker $operation logs ${arguments} ${name} -f ${rest}"
     else
-      eval "docker container logs ${arguments} ${name} ${rest}"
+      eval "docker $operation logs ${arguments} ${name} -f ${rest}"
     fi
   ;;
   "diff")
@@ -527,35 +588,64 @@ case $1 in
   ;;
   "port")
     shift
+    arguments_only $@
 
-    kind=$1
-    shift
-
-    case $kind in
-      "container"|"compose")
-      ;;
-      *)
-        echo /dev/stderr "dock.sh port: unrecognized type: $1. exiting."
-        exit 1
-        ;;
-    esac
-
-    name_and_arguments $@
+    if [[ $compose == 'true' ]]
+    then
+      operation='compose'
+    else
+      operation='container'
+    fi
 
     if [[ $dry_run == 'true' ]]
     then
-      echo "docker $kind ${arguments} port ${name} ${rest}"
+      echo "docker $operation ${arguments} port ${rest}"
     else
-      eval "docker $kind ${arguments} port ${name} ${rest}"
+      eval "docker $operation ${arguments} port ${rest}"
     fi
   ;;
   "running")
     arguments_only $@
 
-    docker container ${arguments} ls ${rest}
+    op='container'
+
+    if [[ $compose == 'true' ]]
+    then
+      op='compose'
+    fi
+
+    if [[ $dry_run == 'true' ]]
+    then
+      echo "docker $op ${arguments} ls ${rest}"
+    else
+      eval "docker $op ${arguments} ls ${rest}"
+    fi
+  ;;
+  "top")
+    name_and_arguments $@
+
+    op='container'
+
+    if [[ $compose == 'true' ]]
+    then
+      op='compose'
+    fi
+
+    if [[ $dry_run == 'true' ]]
+    then
+      echo "docker $op ${arguments} top ${rest}"
+    else
+      eval "docker $op ${arguments} top ${rest}"
+    fi
   ;;
   "stop")
     name_and_arguments $@
+
+    if [[ $compose == 'true' ]]
+    then
+      eval "docker compose ${arguments} -p ${name} stop ${rest}"
+      return
+    fi
 
     if [[ $dry_run == 'true' ]]
     then
@@ -566,6 +656,12 @@ case $1 in
   ;;
   "delete")
     name_and_arguments $@
+
+    if [[ $compose == 'true' ]]
+    then
+      eval "docker compose ${arguments} -p ${name} stop -s ${rest}"
+      return
+    fi
 
     if [[ $dry_run == 'true' ]]
     then
@@ -673,74 +769,105 @@ case $1 in
     compose='true'
     arguments_only $@
 
-    eval "docker compose ${arguments} create --pull missing --remove-orphans ${rest}"
-  ;;
-  "up")
-    compose='true'
-    arguments_only $@
-
-    eval "docker compose ${arguments} up ${rest}"
+    if [[ $dry_run == 'true' ]]
+    then
+      echo "docker compose ${arguments} create --pull missing --remove-orphans ${rest}"
+    else
+      eval "docker compose ${arguments} create --pull missing --remove-orphans ${rest}"
+    fi
   ;;
   "down")
     compose='true'
     arguments_only $@
 
-    eval "docker compose ${arguments} down ${rest}"
-  ;;
-  "ps")
-    compose='true'
-    arguments_only $@
-
-    eval "docker compose ${arguments} ps ${rest}"
-  ;;
-  "top")
-    compose='true'
-    arguments_only $@
-
-    eval "docker compose ${arguments} top ${rest}"
-  ;;
-  "halt")
-    compose='true'
-    arguments_only $@
-
-    eval "docker compose ${arguments} stop ${rest}"
+    if [[ $dry_run == 'true' ]]
+    then
+      echo "docker compose ${arguments} down ${rest}"
+    else
+      eval "docker compose ${arguments} down ${rest}"
+    fi
   ;;
   "restart")
     compose='true'
     arguments_only $@
 
-    eval "docker compose ${arguments} restart ${rest}"
+    if [[ $dry_run == 'true' ]]
+    then
+      echo "docker compose ${arguments} restart ${rest}"
+    else
+      eval "docker compose ${arguments} restart ${rest}"
+    fi
   ;;
   "list")
     compose='true'
     arguments_only $@
 
-    eval "docker compose ${arguments} ls ${rest}"
+    if [[ $dry_run == 'true' ]]
+    then
+      echo "docker compose ${arguments} ls ${rest}"
+    else
+      eval "docker compose ${arguments} ls ${rest}"
+    fi
   ;;
-  "do")
+  "images")
     compose='true'
-    service_arguments $@
+    arguments_only $@
 
-    eval "docker compose ${arguments} ${service_operation} ${service_name} ${rest}"
+    if [[ $dry_run == 'true' ]]
+    then
+      echo "docker compose ${arguments} images"
+    else
+      eval "docker compose ${arguments} images"
+    fi
   ;;
+  "kill")
+    compose='true'
+    arguments_only $@
+
+    if [[ $dry_run == 'true' ]]
+    then
+      echo "docker compose ${arguments} kill ${rest}"
+    else
+      eval "docker compose ${arguments} kill ${rest}"
+    fi
+  ;;
+
   *|"help")
     cat <<HELP
-[containers]
-
-docker.sh
+[engine]
 login         = login to docker account
 version       = show docker version
-run           = create & start container <NAME>
+
+[containers & compose]
+run           = create & start container/compose <RESOURCE> <NAME> resource=default|image|compose file , NAME=default|identifier to assign
+
+exec          = exec a process inside the container/compose <NAME> [arg/service] alongside PID 1
+debug         = exec a bash inside the container/service <NAME> alongside PID 1
+running       = show running containers or compose services, need arg/compose with arg/name after to specify a compose
+logs          = show logs in follow mode for container/compose
+top           = show running processes
+port          = show port mappings for container/compose
+stop          = stop a container/compose by <NAME>
+delete        = delete a container/compose by <NAME/ID>
+
+[containers]
+
 pry           = create & start container from <IMAGE> interactive with bash
-diff          = show changes in a container from baseline image
-info          = show detailed information about a container, will print in JSON
 attach        = attach to a running container <NAME> viewing/interacting with PID 1
-exec          = exec a process inside the container <NAME> alongside PID 1
-running       = show running containers only
-stop          = stop a container by <NAME/ID>
-delete        = delete a container by <NAME/ID>
+diff          = show changes in a container from baseline image
 purge         = delete all containers by <IMAGE>
 cp            = copy a file in/out use <arg/container> <arg/host> or reversed args
+info          = show detailed information about [container|volume|network] (1), name (2)
+top           = show processes for container/compose
+
+arg/container = specify <CONTAINER> <PATH> as a in container path cp
+arg/host      = specify <PATH> as a host path for cp
+arg/mount     = mount volume <VOL> <MOUNT>
+arg/restart   = restart <always|unless|failed>
+arg/port      = map <port:port>
+arg/user      = run as <USER> or <USER>:GROUP
+arg/daemon    = run containers detached in the background
+arg/groups    = extra groups <GROUP,...>
 
 [volumes]
 
@@ -753,44 +880,33 @@ rmvol         = delete <VOLUME>
 newnet        = create new network <NAME>
 rmnet         = delete <NAME>
 prunenet      = prune unused networks
-port          = <container|compose> <name> show port mappings
 
 [compose]
 
-up       = bring up the services
-down     = stop the services
-ps       = show status of each service
-top      = show processes inside the services
-halt     = stop the compose containers
-restart  = restart the compose containers
+down     = stop the services removing all resources
+restart  = restart all stopped and running services
 list     = list containers for compose
-do       = do <exec|logs|kill> <SERVICE>
+images   = list images used by the compose
 
-[args]
-
-arg/container = specify <CONTAINER> <PATH> as a in container path cp
-arg/host      = specify <PATH> as a host path for cp
-
-arg/args      = copy next positional argument as \$arguments
-arg/all       = show all containers
-arg/env       = specify <VAR=VALUE> as a environment variable
-arg/mount     = mount volume <VOL> <MOUNT>
-arg/daemon    = run containers detached in the background
 arg/detach    = run docker compose in the background
-arg/restart   = restart <always|unless|failed>
-arg/shell     = invoke bash attached to terminal
-arg/port      = map <port:port>
-arg/name      = specify <name> for container
-arg/dry       = dry run, echo the command instead of running it
-arg/user      = run as <USER> or <USER>:GROUP
-arg/groups    = extra groups <GROUP,...>
 arg/compose   = specify the compose <FILE> name, can be specified multiple times
-arg/rmvol     = argument to compose down, delete volumes
 arg/attach    = attach to compose
 arg/dir       = <DIR> to run compose in when specifying arg/compose
 arg/recreate  = for "create" force containers to be recreated even if config/image not changed
-arg/tail      = tail <COUNT> last lines of logs
+
+
+[general args]
+
+arg/dry       = dry run, echo the command instead of running it
+
+arg/args      = copy next positional argument as \$arguments
+arg/env       = specify <VAR=VALUE> as a environment variable
+
 arg/follow    = follow log output
+arg/name      = specify <name> for container|compose, for compose must follow arg/compose
+arg/all       = show all containers
+arg/shell     = invoke bash attached to terminal
+arg/rmvol     = argument to compose down, delete volumes
 arg/bridge    = bridge network create [SUBNET] [IP-RANGE]
 arg/overlay   = overlay network create [SUBNET] [IP-RANGE]
 
