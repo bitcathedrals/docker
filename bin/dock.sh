@@ -53,7 +53,7 @@ function make_args {
 
           rest="${rest} -a"
         ;;
-        "arg/container-path")
+        "arg/container")
           shift
 
           container=$1
@@ -74,10 +74,9 @@ function make_args {
             exit 1
           fi
 
-          arguments="${arguments} \"$container:$path\""
-          shift
+          rest="${rest} \"$container:$path\""
         ;;
-        "arg/host-path")
+        "arg/host")
           shift
 
           path=$1
@@ -95,8 +94,7 @@ function make_args {
             exit 1
           fi
 
-          arguments="${arguments} \"$path\""
-          shift
+          rest="${rest} \"$path\""
         ;;
         "arg/groups")
           shift
@@ -473,6 +471,16 @@ case $1 in
       eval "docker container exec ${arguments} ${name} ${rest}"
     fi
   ;;
+  "debug")
+    name_and_arguments $@
+
+    if [[ $dry_run == 'true' ]]
+    then
+      echo "docker container exec ${arguments} -it ${name} /bin/bash ${rest}"
+    else
+      eval "docker container exec ${arguments} -it ${name} /bin/bash ${rest}"
+    fi
+  ;;
   "logs")
     name_and_arguments $@
 
@@ -642,7 +650,7 @@ case $1 in
     fi
   ;;
   "cp")
-    name_and_arguments $@
+    arguments_only $@
 
     if [[ $dry_run == 'true' ]]
     then
@@ -732,7 +740,7 @@ running       = show running containers only
 stop          = stop a container by <NAME/ID>
 delete        = delete a container by <NAME/ID>
 purge         = delete all containers by <IMAGE>
-cp            = copy a file in/out use <arg/container-path> <arg/host-path> or reversed args
+cp            = copy a file in/out use <arg/container> <arg/host> or reversed args
 
 [volumes]
 
@@ -760,8 +768,8 @@ do       = do <exec|logs|kill> <SERVICE>
 
 [args]
 
-arg/container-path  = specify <CONTAINER> <PATH> as a in container path cp
-arg/host-path       = specify <PATH> as a host path for cp
+arg/container = specify <CONTAINER> <PATH> as a in container path cp
+arg/host      = specify <PATH> as a host path for cp
 
 arg/args      = copy next positional argument as \$arguments
 arg/all       = show all containers
