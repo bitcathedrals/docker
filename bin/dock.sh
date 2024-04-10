@@ -456,15 +456,16 @@ case $1 in
     if [[ $? -eq 0 ]]
     then
       echo >/dev/stderr "dock.sh pry [container] \"pry\" exists, launching debug into existing container"
+      $0 start pry
       $0 debug pry
       return
     fi
 
     if [[ $dry_run == 'true' ]]
     then
-      echo "docker container run -it --entrypoint /bin/bash ${resource} --name \"pry\" ${rest}"
+      echo "docker container run -it --name pry --rm --entrypoint /bin/bash ${resource} ${rest}"
     else
-      eval "docker container run -it --entrypoint /bin/bash ${resource} --name \"pry\" ${rest}"
+      eval "docker container run -it --name pry --rm  --entrypoint /bin/bash ${resource} ${rest}"
     fi
   ;;
   "start")
