@@ -5,6 +5,7 @@ test -f docker.sh && source docker.sh
 
 dry_run='false'
 compose='false'
+all='false'
 
 function make_args {
   arguments=""
@@ -50,7 +51,7 @@ function make_args {
         ;;
         "arg/all")
           shift
-
+          all="true"
           rest="${rest} -a"
         ;;
         "arg/container")
@@ -307,19 +308,59 @@ function resource_and_arguments {
   command=$1
   shift
 
-  resource=$1
-  shift
+  default=$DOCKER_IMAGE
 
-  if [[ -z $resource ]]
+  if [[ -n $default ]]
   then
-    echo >/dev/stderr "dock.sh resource_and_arguments: no resource (1) specified. exiting."
-    exit 1
+    image=$default
+  else
+    if [[ -n ${BUILD_NAME} ]]
+    then
+      if [[ $command == "purge" ]] && [[ $all == 'true' ]]
+      then
+        resource=${BUILD_NAME}
+        return
+      fi
+
+      if [[ -n ${DOCKER_VERSION} ]]
+      then
+        image="${BUILD_NAME}:${DOCKER_VERSION}"
+      else
+        echo >/dev/stderr "dock.sh resource_and_arguments: no DOCKER_VERSION specified, using BUILD_NAME and argument (1) as version."
+        image="${BUILD_NAME}:${image}"
+      fi
+    else
+      echo >/dev/stderr "dock.sh resource_and_arguments: no BUILD_NAME specified, using argument."
+
+      parameter=$1
+      shift
+
+      if [[ -z $parameter ]]
+      then
+        echo >/dev/stderr "dock.sh resource_and_arguments: no resource (1) specified. exiting."
+        exit 1
+      fi
+    fi
+  fi
+
+  make_args $@
+
+  if [[ $command == 'purge' ]]
+  then
+    resource=$image
+    return
+  fi
+
+  if [[ $compose == 'true' ]]
+  then
+    if [[ $parameter != 'default' ]]
+    then
+      arguments="${arguments} -f $resource"
+    fi
   fi
 
   case $command in
     "run")
-      echo >/dev/stderr "dock.sh: resource_and_arguments - requiring name argument (2)."
-
       name=$1
       shift
 
@@ -334,48 +375,6 @@ function resource_and_arguments {
       ;;
   esac
 
-  make_args $@
-
-  if [[ $compose == 'true' ]]
-  then
-    if [[ $resource != 'default' ]]
-    then
-      arguments="${arguments} -f $resource"
-    fi
-
-    if [[ $name != 'default' ]]
-    then
-      arguments="${arguments} -p $name"
-    fi
-
-    return
-  fi
-
-  default=$DOCKER_IMAGE
-
-  if [[ -n $default ]]
-  then
-    resource=$default
-  else
-    if [[ -n ${BUILD_NAME} ]]
-    then
-      if [[ -n ${DOCKER_VERSION} ]]
-      then
-        resource="${BUILD_NAME}:${DOCKER_VERSION}"
-      else
-        echo >/dev/stderr "dock.sh resource_and_arguments: no DOCKER_VERSION specified, using BUILD_NAME and argument (1) as version."
-        resource="${BUILD_NAME}:${resource}"
-      fi
-    else
-        echo >/dev/stderr "dock.sh resource_and_arguments: no BUILD_NAME specified, using argument as is."
-    fi
-  fi
-
-  if [[ $command == 'purge' ]]
-  then
-    return
-  fi
-
   user=$DOCKER_USER
 
   if [[ -z $user ]]
@@ -384,7 +383,7 @@ function resource_and_arguments {
     exit 1
   fi
 
-  resource="${user}/${resource}"
+  resource="${user}/${image}"
 }
 
 function name_and_arguments {
@@ -673,6 +672,11 @@ case $1 in
   "purge")
     resource_and_arguments $@
 
+    if [[ $dry_run == 'true' ]]
+    then
+      echo >/dev/stderr "dock.sh purge: purging with resource $resource - dry/run"
+    fi
+
     for container in $(dock.sh ps arg/all | grep ${resource} | tr -s ' ' | cut -d ' ' -f 1)
     do
       echo "purging container: $container"
@@ -831,7 +835,6 @@ case $1 in
       eval "docker compose ${arguments} kill ${rest}"
     fi
   ;;
-
   *|"help")
     cat <<HELP
 [engine]
