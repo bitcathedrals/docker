@@ -169,16 +169,16 @@ function make_args {
             exit 1
           fi
 
-          mount_dir=$1
+          mount=$1
+          shift
 
-          if [[ -z $mount_dir ]]
+          if [[ -z $mount ]]
           then
             echo >/dev/stderr "dock.sh: arg/mount - mount point not given. exiting."
             exit 1
           fi
 
-          arguments="${arguments} -v ${vol}:${mount_dir}"
-          shift
+          arguments="${arguments} -v ${vol}:${mount}"
         ;;
         "arg/shell")
           arguments="${arguments} -it"
@@ -463,9 +463,9 @@ case $1 in
 
     if [[ $dry_run == 'true' ]]
     then
-      echo "docker container run -it --name pry --rm --entrypoint /bin/bash ${resource} ${rest}"
+      echo "docker container run -it --name pry --rm ${arguments} --entrypoint /bin/bash ${resource} ${rest}"
     else
-      eval "docker container run -it --name pry --rm  --entrypoint /bin/bash ${resource} ${rest}"
+      eval "docker container run -it --name pry --rm ${arguments} --entrypoint /bin/bash ${resource} ${rest}"
     fi
   ;;
   "start")
