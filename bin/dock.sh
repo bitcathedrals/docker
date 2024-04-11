@@ -266,6 +266,12 @@ function make_args {
           arguments="${arguments} -p $1"
           shift
         ;;
+        "arg/oneshot")
+          shift
+
+          arguments="${arguments} --rm"
+          shift
+        ;;
         "arg/name")
           shift
 
@@ -915,9 +921,11 @@ arg/signal    = pass <SIGNAL> to container or compose with "kill"
 arg/name      = specify <name> for container|compose, for compose must follow arg/compose
 arg/terminal  = attach command to terminal
 arg/shell     = invoke bash attached to terminal
+arg/oneshot   = delete container/service after running
 
 [compose]
 
+create   = create the compose services and resources
 down     = stop the services removing all resources
 restart  = restart all stopped and running services
 list     = list containers for compose
