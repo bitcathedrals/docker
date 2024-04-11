@@ -6,6 +6,7 @@ test -f docker.sh && source docker.sh
 dry_run='false'
 compose='false'
 all='false'
+service=''
 
 function make_args {
   arguments=""
@@ -53,6 +54,14 @@ function make_args {
           shift
           all="true"
           rest="${rest} -a"
+        ;;
+        "arg/service")
+          shift
+
+          compose='true'
+
+          service=$1
+          shift
         ;;
         "arg/signal")
           shift
@@ -708,7 +717,7 @@ case $1 in
 
     if [[ $compose == 'true' ]]
     then
-      eval "docker compose ${arguments} -p $name kill ${rest}"
+      eval "docker compose ${arguments} -p $name kill ${service} ${rest}"
     else
       if [[ $dry_run == 'true' ]]
       then
@@ -872,7 +881,7 @@ top           = show running processes
 port          = show port mappings for container/compose
 stop          = stop a container/compose by <NAME>
 delete        = delete a container/compose by <NAME/ID>
-kill          = <SIGNAL> send a signal to the container or compose
+kill          = <SIGNAL> send a signal to the container or compose, arg/service can be used.
 
 [containers]
 
@@ -924,6 +933,7 @@ arg/recreate  = for "create" force containers to be recreated even if config/ima
 
 arg/dry       = dry run, echo the command instead of running it
 
+arg/service   = specify a service for compose commands
 arg/signal    = pass <SIGNAL> to container or compose with "kill"
 arg/args      = copy next positional argument as \$arguments
 arg/env       = specify <VAR=VALUE> as a environment variable
