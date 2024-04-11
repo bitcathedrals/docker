@@ -201,13 +201,9 @@ function make_args {
           arguments="${arguments} -it"
           shift
         ;;
-        "arg/daemon")
-          arguments="${arguments} -d"
-          shift
-        ;;
         "arg/detach")
-          rest="${rest} --detach"
           shift
+          rest="${rest} -d"
         ;;
         "arg/dir")
           shift
@@ -899,7 +895,6 @@ arg/mount     = mount volume <VOL> <MOUNT>
 arg/restart   = restart <always|unless|failed>
 arg/port      = map <port:port>
 arg/user      = run as <USER> or <USER>:GROUP
-arg/daemon    = run containers detached in the background
 arg/groups    = extra groups <GROUP,...>
 
 [volumes]
@@ -915,6 +910,12 @@ newnet        = create new network <NAME>
 rmnet         = delete <NAME>
 prunenet      = prune unused networks
 
+[container and compose]
+
+arg/detach    = run docker compose/container in the background
+arg/signal    = pass <SIGNAL> to container or compose with "kill"
+arg/name      = specify <name> for container|compose, for compose must follow arg/compose
+
 [compose]
 
 down     = stop the services removing all resources
@@ -922,7 +923,6 @@ restart  = restart all stopped and running services
 list     = list containers for compose
 images   = list images used by the compose
 
-arg/detach    = run docker compose in the background
 arg/compose   = specify the compose <FILE> name, can be specified multiple times
 arg/attach    = attach to compose
 arg/dir       = <DIR> to run compose in when specifying arg/compose
@@ -934,12 +934,10 @@ arg/recreate  = for "create" force containers to be recreated even if config/ima
 arg/dry       = dry run, echo the command instead of running it
 
 arg/service   = specify a service for compose commands
-arg/signal    = pass <SIGNAL> to container or compose with "kill"
 arg/args      = copy next positional argument as \$arguments
 arg/env       = specify <VAR=VALUE> as a environment variable
 
 arg/follow    = follow log output
-arg/name      = specify <name> for container|compose, for compose must follow arg/compose
 arg/all       = show all containers
 arg/shell     = invoke bash attached to terminal
 arg/rmvol     = argument to compose down, delete volumes
