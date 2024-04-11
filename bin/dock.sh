@@ -54,6 +54,14 @@ function make_args {
           all="true"
           rest="${rest} -a"
         ;;
+        "arg/signal")
+          shift
+
+          signal=$1
+          shift
+
+          rest="${rest} --signal ${signal}"
+        ;;
         "arg/container")
           shift
 
@@ -394,8 +402,13 @@ function name_and_arguments {
 
   if [[ -z $name ]]
   then
-    name=$1
-    shift
+    name=$DOCKER_COMPOSE
+
+    if [[ -z $name ]]
+    then
+      name=$1
+      shift
+    fi
   fi
 
   if [[ -z $name ]]
@@ -690,6 +703,21 @@ case $1 in
       fi
     done
   ;;
+  "kill")
+    name_and_arguments $@
+
+    if [[ $compose == 'true' ]]
+    then
+      eval "docker compose ${arguments} -p $name kill ${rest}"
+    else
+      if [[ $dry_run == 'true' ]]
+      then
+        echo "docker container ${arguments} kill $name ${rest}"
+      else
+        eval "docker container ${arguments} kill $name ${rest}"
+      fi
+    fi
+  ;;
   "newvol")
     identifier_and_arguments $@
 
@@ -740,7 +768,7 @@ case $1 in
       eval "docker network ${arguments} prune ${rest}"
     fi
   ;;
-  "lsnet")
+  "networks")
     arguments_only $@
 
     if [[ $dry_run == 'true' ]]
@@ -825,24 +853,15 @@ case $1 in
       eval "docker compose ${arguments} images"
     fi
   ;;
-  "kill")
-    compose='true'
-    arguments_only $@
-
-    if [[ $dry_run == 'true' ]]
-    then
-      echo "docker compose ${arguments} kill ${rest}"
-    else
-      eval "docker compose ${arguments} kill ${rest}"
-    fi
-  ;;
   *|"help")
     cat <<HELP
 [engine]
+
 login         = login to docker account
 version       = show docker version
 
 [containers & compose]
+
 run           = create & start container/compose <RESOURCE> <NAME> resource=default|image|compose file , NAME=default|identifier to assign
 
 exec          = exec a process inside the container/compose <NAME> [arg/service] alongside PID 1
@@ -853,6 +872,7 @@ top           = show running processes
 port          = show port mappings for container/compose
 stop          = stop a container/compose by <NAME>
 delete        = delete a container/compose by <NAME/ID>
+kill          = <SIGNAL> send a signal to the container or compose
 
 [containers]
 
@@ -881,6 +901,7 @@ rmvol         = delete <VOLUME>
 
 [NETWORK]
 
+networks      = list the networks
 newnet        = create new network <NAME>
 rmnet         = delete <NAME>
 prunenet      = prune unused networks
@@ -903,6 +924,7 @@ arg/recreate  = for "create" force containers to be recreated even if config/ima
 
 arg/dry       = dry run, echo the command instead of running it
 
+arg/signal    = pass <SIGNAL> to container or compose with "kill"
 arg/args      = copy next positional argument as \$arguments
 arg/env       = specify <VAR=VALUE> as a environment variable
 
