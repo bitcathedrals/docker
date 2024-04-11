@@ -197,8 +197,13 @@ function make_args {
 
           arguments="${arguments} -v ${vol}:${mount}"
         ;;
+        "arg/terminal")
+          arguments="${arguments} -it"
+          shift
+        ;;
         "arg/shell")
           arguments="${arguments} -it"
+          rest="${rest} /bin/bash"
           shift
         ;;
         "arg/detach")
@@ -908,6 +913,8 @@ prunenet      = prune unused networks
 arg/detach    = run docker compose/container in the background
 arg/signal    = pass <SIGNAL> to container or compose with "kill"
 arg/name      = specify <name> for container|compose, for compose must follow arg/compose
+arg/terminal  = attach command to terminal
+arg/shell     = invoke bash attached to terminal
 
 [compose]
 
@@ -932,7 +939,6 @@ arg/env       = specify <VAR=VALUE> as a environment variable
 
 arg/follow    = follow log output
 arg/all       = show all containers
-arg/shell     = invoke bash attached to terminal
 arg/rmvol     = argument to compose down, delete volumes
 arg/bridge    = bridge network create [SUBNET] [IP-RANGE]
 arg/overlay   = overlay network create [SUBNET] [IP-RANGE]
