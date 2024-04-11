@@ -322,6 +322,7 @@ function resource_and_arguments {
   shift
 
   default=$DOCKER_IMAGE
+  parameter=''
 
   if [[ -n $default ]]
   then
@@ -362,14 +363,6 @@ function resource_and_arguments {
   then
     resource=$image
     return
-  fi
-
-  if [[ $compose == 'true' ]]
-  then
-    if [[ $parameter != 'default' ]]
-    then
-      arguments="${arguments} -f $resource"
-    fi
   fi
 
   case $command in
@@ -456,7 +449,7 @@ case $1 in
     if [[ $compose == 'true' ]]
     then
       eval "docker compose ${arguments} up ${rest}"
-      exit 0
+      exit $?
     fi
 
     if [[ $dry_run == 'true' ]]
