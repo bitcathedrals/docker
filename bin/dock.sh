@@ -199,11 +199,15 @@ function make_args {
           arguments="${arguments} -v ${vol}:${mount}"
         ;;
         "arg/terminal")
-          arguments="${arguments} -it"
+          before="${before} -it"
+          shift
+        ;;
+        "arg/only")
+          before="${before} --no-deps"
           shift
         ;;
         "arg/shell")
-          arguments="${arguments} -it"
+          before="${before} -it"
           rest="${rest} /bin/bash"
           shift
         ;;
@@ -944,7 +948,7 @@ images   = list images used by the compose
 arg/compose   = specify the compose <FILE> name, can be specified multiple times
 arg/dir       = <DIR> to run compose in when specifying arg/compose
 arg/recreate  = for "create" force containers to be recreated even if config/image not changed
-
+arg/only      = don't start linked dependencies
 
 [general args]
 
