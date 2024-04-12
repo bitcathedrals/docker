@@ -869,6 +869,14 @@ case $1 in
 login         = login to docker account
 version       = show docker version
 
+[environment]
+
+variables can be specified as exports or variables, or in pyhthon.sh, or docker.sh
+
+DOCKER_IMAGE   = <IMAGE NAME>|'service' - use as image name, or service means return arg(1) as service name
+DOCKER_VERSION = <VERSION> - version of the docker image
+DOCKER_USER    = docker registry user name
+
 [containers & compose]
 
 run           = create & start container/compose <RESOURCE> <NAME> resource=default|image|compose file , NAME=default|identifier to assign
