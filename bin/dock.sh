@@ -343,7 +343,7 @@ function resource_and_arguments {
       resource=$1
       shift
 
-      if [[ -n ${resource} ]]
+      if [[ -z ${resource} ]]
       then
         echo >/dev/stderr "dock.sh: DOCKER_IMAGE = \"service\" requires service name (1). exiting."
         exit 1
