@@ -6,7 +6,6 @@ test -f docker.sh && source docker.sh
 dry_run='false'
 compose='false'
 all='false'
-service=''
 
 arguments=""
 before=""
@@ -200,7 +199,30 @@ function make_args {
             exit 1
           fi
 
-          before="${before} -v ${vol}:${mount}"
+          before="${before} -v ${vol}:${mount}:rw"
+        ;;
+        "arg/mirror")
+          shift
+
+          vol=$1
+          shift
+
+          if [[ -z $vol ]]
+          then
+            echo >/dev/stderr "dock.sh: arg/mirror - volume name not given. exiting."
+            exit 1
+          fi
+
+          mount=$1
+          shift
+
+          if [[ -z $mount ]]
+          then
+            echo >/dev/stderr "dock.sh: arg/mirror - mount point not given. exiting."
+            exit 1
+          fi
+
+          before="${before} -v ${vol}:${mount}:ro"
         ;;
         "arg/terminal")
           before="${before} -it"
@@ -322,6 +344,12 @@ function make_args {
         "arg/prod")
           shift
           before="${before} --tmpfs --read-only"
+        ;;
+        "arg/cpus")
+          shift
+
+          before="${before} --cpus $1"
+          shift
         ;;
         *)
           rest=$*
@@ -474,6 +502,12 @@ case $1 in
 
     if [[ $compose == 'true' ]]
     then
+      if [[ $dry_run == 'true' ]]
+      then
+        echo "docker compose ${arguments} run ${before} --cap-drop $DROP_CAPS --cap-add $ADD_CAPS ${resource} ${rest}"
+        exit 0
+      fi
+
       exec docker compose ${arguments} run ${before} --cap-drop $DROP_CAPS --cap-add $ADD_CAPS ${resource} ${rest}
     fi
 
@@ -914,25 +948,14 @@ top           = show processes for container/compose
 
 arg/container = specify <CONTAINER> <PATH> as a in container path cp
 arg/host      = specify <PATH> as a host path for cp
-arg/mount     = mount volume <VOL> <MOUNT>
+arg/mount     = mount volume <VOL> <MOUNT> as RW
+arg/mirror    = mount volume <VOL> <MOUNT> as RO
 arg/restart   = restart <always|unless|failed>
 arg/port      = map <port:port>
 arg/user      = run as <USER> or <USER>:GROUP
 arg/groups    = extra groups <GROUP,...>
 arg/attach    = attach stdin,stdout,stderr on container run commands
-
-[volumes]
-
-volumes       = show volumes
-newvol        = create new <VOLUME>
-rmvol         = delete <VOLUME>
-
-[NETWORK]
-
-networks      = list the networks
-newnet        = create new network <NAME>
-rmnet         = delete <NAME>
-prunenet      = prune unused networks
+arg/cpus      = use <CPUS> number of cpus
 
 [container and compose]
 
@@ -970,6 +993,19 @@ arg/all       = show all containers
 arg/rmvol     = argument to compose down, delete volumes
 arg/bridge    = bridge network create [SUBNET] [IP-RANGE]
 arg/overlay   = overlay network create [SUBNET] [IP-RANGE]
+
+[volumes]
+
+volumes       = show volumes
+newvol        = create new <VOLUME>
+rmvol         = delete <VOLUME>
+
+[NETWORK]
+
+networks      = list the networks
+newnet        = create new network <NAME>
+rmnet         = delete <NAME>
+prunenet      = prune unused networks
 
 [TIPS]
 
