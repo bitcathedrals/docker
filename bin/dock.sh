@@ -792,7 +792,7 @@ case $1 in
       exit 0
     fi
 
-"    eval "docker network ${arguments} prune ${before} ${rest}"
+    eval "docker network ${arguments} prune ${before} ${rest}"
     exit $?
   ;;
   "networks")
