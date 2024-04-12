@@ -12,6 +12,9 @@ arguments=""
 before=""
 rest=""
 
+DROP_CAPS="all"
+ADD_CAPS="CHOWN"
+
 function make_args {
   if [[ -n $1 ]]
   then
@@ -37,32 +40,24 @@ function make_args {
         "arg/user")
           shift
 
-          arguments="${arguments} -u $1"
+          before="${before} -u $1"
           shift
         ;;
         "arg/env")
           shift
 
-          arguments="${arguments} -e \"$1\""
+          before="${before} -e \"$1\""
           shift
         ;;
         "arg/follow")
           shift
 
-          rest="${rest} --follow"
+          before="${before} --follow"
         ;;
         "arg/all")
           shift
           all="true"
-          rest="${rest} -a"
-        ;;
-        "arg/service")
-          shift
-
-          compose='true'
-
-          service=$1
-          shift
+          before="${before} -a"
         ;;
         "arg/signal")
           shift
@@ -80,7 +75,7 @@ function make_args {
 
           if [[ -z $container ]]
           then
-            echo >/dev/stderr "dock.sh: arg/container - container name not given. exiting."
+            echo >/dev/stderr "dock.sh: arg/container - container not given. exiting."
             exit 1
           fi
 
@@ -118,8 +113,17 @@ function make_args {
         "arg/groups")
           shift
 
-          arguments="${arguments} --group-add $1"
+          before="${before} --group-add $1"
           shift
+        ;;
+        "arg/caps")
+          shift
+
+          caps=$1
+          shift
+
+          DROP_CAPS=`echo "$caps" | cut -d ':' -f 1`
+          ADD_CAPS=`echo "$caps" | cut -d ':' -f 2`
         ;;
         "arg/bridge")
           shift
@@ -196,7 +200,7 @@ function make_args {
             exit 1
           fi
 
-          arguments="${arguments} -v ${vol}:${mount}"
+          before="${before} -v ${vol}:${mount}"
         ;;
         "arg/terminal")
           before="${before} -it"
@@ -213,7 +217,7 @@ function make_args {
         ;;
         "arg/detach")
           shift
-          rest="${rest} -d"
+          before="${before} -d"
         ;;
         "arg/dir")
           shift
@@ -262,19 +266,17 @@ function make_args {
             ;;
           esac
 
-          arguments="${arguments} --restart ${restart}"
+          before="${before} --restart ${restart}"
           shift
         ;;
         "arg/port")
           shift
-
-          arguments="${arguments} -p $1"
-          shift
+          before="${before} --publish-all"
         ;;
         "arg/oneshot")
           shift
 
-          rest="${rest} --rm"
+          before="${before} --rm"
           shift
         ;;
         "arg/name")
@@ -316,6 +318,10 @@ function make_args {
 
           arguments="${rest} --force-recreate"
           shift
+        ;;
+        "arg/prod")
+          shift
+          before="${before} --tmpfs --read-only"
         ;;
         *)
           rest=$*
@@ -468,16 +474,16 @@ case $1 in
 
     if [[ $compose == 'true' ]]
     then
-      exec docker compose ${arguments} run ${before} ${resource} ${rest}
+      exec docker compose ${arguments} run ${before} --cap-drop $DROP_CAPS --cap-add $ADD_CAPS ${resource} ${rest}
     fi
 
     if [[ $dry_run == 'true' ]]
     then
-      echo "docker container run ${arguments} ${before} ${resource} ${rest}"
+      echo "docker container run ${arguments} ${before} --cap-drop $DROP_CAPS --cap-add $ADD_CAPS ${resource} ${rest}"
       exit 0
     fi
 
-    eval "docker container run ${arguments} ${before} ${resource} ${rest}"
+    eval "docker container run ${arguments} ${before} --cap-drop $DROP_CAPS --cap-add $ADD_CAPS ${resource} ${rest}"
     exit $?
   ;;
   "pry")
@@ -723,7 +729,7 @@ case $1 in
 
     if [[ $compose == 'true' ]]
     then
-      exec docker compose ${arguments} -p $name kill ${before} ${service} ${rest}
+      exec docker compose ${arguments} kill ${before} ${name} ${rest}
     fi
 
     if [[ $dry_run == 'true' ]]
@@ -955,7 +961,6 @@ arg/only      = don't start linked dependencies
 
 arg/dry       = dry run, echo the command instead of running it
 
-arg/service   = specify a service for compose commands
 arg/args      = copy next positional argument as \$arguments
 arg/env       = specify <VAR=VALUE> as a environment variable
 
