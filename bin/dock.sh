@@ -8,10 +8,11 @@ compose='false'
 all='false'
 service=''
 
-function make_args {
-  arguments=""
-  rest=""
+arguments=""
+before=""
+rest=""
 
+function make_args {
   if [[ -n $1 ]]
   then
     while [[ -n $1 ]]
@@ -462,17 +463,16 @@ case $1 in
 
     if [[ $compose == 'true' ]]
     then
-      docker compose ${arguments} run ${resource} ${rest}
-      exit $?
+      exec docker compose ${arguments} run ${before} ${resource} ${rest}
     fi
 
     if [[ $dry_run == 'true' ]]
     then
-      echo "docker container run ${arguments} ${resource} ${rest}"
+      echo "docker container run ${arguments} ${before} ${resource} ${rest}"
       exit 0
     fi
 
-    eval "docker container run ${arguments} ${resource} ${rest}"
+    eval "docker container run ${arguments} ${before} ${resource} ${rest}"
     exit $?
   ;;
   "pry")
@@ -480,21 +480,13 @@ case $1 in
 
     docker inspect "pry" >/dev/null 2>&1
 
-    if [[ $? -eq 0 ]]
-    then
-      echo >/dev/stderr "dock.sh pry [container] \"pry\" exists, launching debug into existing container"
-      $0 start pry
-      $0 debug pry
-      return
-    fi
-
     if [[ $dry_run == 'true' ]]
     then
-      echo "docker container run -it --name pry --rm ${arguments} --entrypoint /bin/bash ${resource} ${rest}"
+      echo "docker container run -it --rm ${arguments} --entrypoint /bin/bash ${before} ${resource} ${rest}"
       exit 0
     fi
 
-    eval "docker container run -it --name pry --rm ${arguments} --entrypoint /bin/bash ${resource} ${rest}"
+    eval "docker container run -it --rm ${arguments} --entrypoint /bin/bash ${before} ${resource} ${rest}"
     exit $?
   ;;
   "start")
@@ -502,17 +494,16 @@ case $1 in
 
     if [[ $compose == 'true' ]]
     then
-      docker compose ${arguments} start ${name} ${rest}
-      exit $?
+      exec docker compose ${arguments} start ${before} ${name} ${rest}
     fi
 
     if [[ $dry_run == 'true' ]]
     then
-      echo "docker container start ${arguments} ${name}  ${rest}"
+      echo "docker container start ${arguments} ${before} ${name}  ${rest}"
       exit 0
     fi
 
-    eval "docker container start ${arguments} ${name} ${name} ${rest}"
+    eval "docker container start ${arguments} ${before} ${name} ${name} ${rest}"
     exit $?
   ;;
   "attach")
@@ -520,61 +511,45 @@ case $1 in
 
     if [[ $dry_run == 'true' ]]
     then
-      echo "docker container attach ${arguments} ${name} ${rest}"
+      echo "docker container attach ${arguments} ${before} ${name} ${rest}"
       exit 0
     fi
 
-    eval "docker container attach ${arguments} ${name} ${rest}"
+    eval "docker container attach ${arguments} ${before} ${name} ${rest}"
     exit $?
   ;;
   "exec")
     name_and_arguments $@
 
+    if [[ $compose == 'true' ]]
+    then
+      exec docker compose ${arguments} exec -it ${before} ${name} ${rest}
+    fi
+
     if [[ $dry_run == 'true' ]]
     then
-      if [[ $compose == 'true' ]]
-      then
-        docker compose --dry-run ${arguments} exec -it ${name} /bin/bash ${rest}
-      else
-        echo "docker container ${arguments} exec -it ${name} /bin/bash ${rest}"
-      fi
-
+      echo "docker container ${arguments} exec -it ${before} ${name} ${rest}"
       exit 0
     fi
 
-    if [[ $compose == 'true' ]]
-    then
-      operation='compose'
-    else
-      operation='container'
-    fi
-
-    eval "docker $operation ${arguments} exec ${name} ${rest}"
+    eval "docker container ${arguments} exec -it ${before} ${name} ${rest}"
     exit $?
   ;;
   "debug")
     name_and_arguments $@
 
+    if [[ $compose == 'true' ]]
+    then
+      exec docker compose ${arguments} exec -it ${before} ${name} /bin/bash ${rest}
+    fi
+
     if [[ $dry_run == 'true' ]]
     then
-      if [[ $compose == 'true' ]]
-      then
-        docker compose --dry-run ${arguments} exec -it ${name} /bin/bash ${rest}
-      else
-        echo "docker container ${arguments} exec -it ${name} /bin/bash ${rest}"
-      fi
-
+      echo "docker container ${arguments} exec -it ${before} ${name} /bin/bash ${rest}"
       exit 0
     fi
 
-    if [[ $compose == 'true' ]]
-    then
-      operation='compose'
-    else
-      operation='container'
-    fi
-
-    eval "docker $operation ${arguments} exec -it ${name} /bin/bash ${rest}"
+    eval "docker container ${arguments} exec -it ${before} ${name} /bin/bash ${rest}"
     exit $?
   ;;
   "logs")
@@ -582,18 +557,16 @@ case $1 in
 
     if [[ $compose == 'true' ]]
     then
-      operation='compose'
-    else
-      operation='container'
+      exec docker compose ${arguments} logs ${before} ${name} -f ${rest}
     fi
 
     if [[ $dry_run == 'true' ]]
     then
-      echo "docker $operation logs ${arguments} ${name} -f ${rest}"
+      echo "docker container logs ${arguments} ${before} ${name} -f ${rest}"
       exit 0
     fi
 
-    eval "docker $operation logs ${arguments} ${name} -f ${rest}"
+    eval "docker container logs ${arguments} ${before} ${name} -f ${rest}"
     exit $?
   ;;
   "diff")
@@ -601,11 +574,11 @@ case $1 in
 
     if [[ $dry_run == 'true' ]]
     then
-      echo "docker container diff ${arguments} ${name} ${rest}"
+      echo "docker container diff ${arguments} ${before} ${name} ${rest}"
       exit 0
     fi
 
-    eval "docker container diff ${arguments} ${name} ${rest}"
+    eval "docker container diff ${arguments} ${before} ${name} ${rest}"
     exit $?
   ;;
   "info")
@@ -627,11 +600,11 @@ case $1 in
 
     if [[ $dry_run == 'true' ]]
     then
-      echo "docker $kind inspect -f json ${arguments} ${name} ${rest}"
+      echo "docker $kind inspect -f json ${arguments} ${before} ${name} ${rest}"
       exit 0
     fi
 
-    eval "docker $kind inspect -f json ${arguments} ${name} ${rest}"
+    eval "docker $kind inspect -f json ${arguments} ${before} ${name} ${rest}"
     exit $?
   ;;
   "port")
@@ -640,56 +613,50 @@ case $1 in
 
     if [[ $compose == 'true' ]]
     then
-      operation='compose'
-    else
-      operation='container'
+      exec docker compose ${arguments} port ${before} ${rest}
     fi
 
     if [[ $dry_run == 'true' ]]
     then
-      echo "docker $operation ${arguments} port ${rest}"
+      echo "docker container ${arguments} port ${before} ${rest}"
       exit 0
     fi
 
-    eval "docker $operation ${arguments} port ${rest}"
+    eval "docker container ${arguments} port ${before} ${rest}"
     exit $?
   ;;
   "ps")
     arguments_only $@
 
-    op='container'
-
     if [[ $compose == 'true' ]]
     then
-      op='compose'
+      exec docker compose ${arguments} ls ${before} ${rest}
     fi
 
     if [[ $dry_run == 'true' ]]
     then
-      echo "docker $op ${arguments} ls ${rest}"
+      echo "docker container ${arguments} ls ${before} ${rest}"
       exit 0
     fi
 
-    eval "docker $op ${arguments} ls ${rest}"
+    eval "docker container ${arguments} ls ${before} ${rest}"
     exit $?
   ;;
   "top")
     name_and_arguments $@
 
-    op='container'
-
     if [[ $compose == 'true' ]]
     then
-      op='compose'
+      exec docker compose ${arguments} top ${before} ${rest}
     fi
 
     if [[ $dry_run == 'true' ]]
     then
-      echo "docker $op ${arguments} top ${rest}"
+      echo "docker $op ${arguments} top ${before} ${rest}"
       exit 0
     fi
 
-    eval "docker $op ${arguments} top ${rest}"
+    eval "docker $op ${arguments} top ${before} ${rest}"
     exit $?
   ;;
   "stop")
@@ -697,17 +664,16 @@ case $1 in
 
     if [[ $compose == 'true' ]]
     then
-      docker compose ${arguments} -p ${name} stop ${rest}
-      exit $?
+      exec docker compose ${arguments} -p ${name} stop ${rest}
     fi
 
     if [[ $dry_run == 'true' ]]
     then
-      echo "docker container stop ${arguments} ${name} ${rest}"
+      echo "docker container stop ${arguments} ${before} ${name} ${rest}"
       exit 0
     fi
 
-    eval "docker container stop ${arguments} ${name} ${rest}"
+    eval "docker container stop ${arguments} ${before} ${name} ${rest}"
     exit $?
   ;;
   "delete")
@@ -715,17 +681,16 @@ case $1 in
 
     if [[ $compose == 'true' ]]
     then
-      docker compose ${arguments} -p ${name} stop -s ${rest}
-      exit $?
+      exec docker compose ${arguments} stop ${before} ${name} ${rest}
     fi
 
     if [[ $dry_run == 'true' ]]
     then
-      echo "docker container rm ${arguments} ${name} ${rest}"
+      echo "docker container rm ${arguments} ${before} ${name} ${rest}"
       exit 0
     fi
 
-    eval "docker container rm ${arguments} ${name} ${rest}"
+    eval "docker container rm ${arguments} ${before} ${name} ${rest}"
     exit $?
   ;;
   "purge")
@@ -753,17 +718,16 @@ case $1 in
 
     if [[ $compose == 'true' ]]
     then
-      docker compose ${arguments} -p $name kill ${service} ${rest}
-      exit $?
+      exec docker compose ${arguments} -p $name kill ${before} ${service} ${rest}
     fi
 
     if [[ $dry_run == 'true' ]]
     then
-      echo "docker container ${arguments} kill $name ${rest}"
+      echo "docker container ${arguments} kill ${before} $name ${rest}"
       exit 0
     fi
 
-    eval "docker container ${arguments} kill $name ${rest}"
+    eval "docker container ${arguments} kill ${before} $name ${rest}"
     exit $?
   ;;
   "newvol")
@@ -771,11 +735,11 @@ case $1 in
 
     if [[ $dry_run == 'true' ]]
     then
-      echo "docker volume ${arguments} create $name ${rest}"
+      echo "docker volume ${arguments} create ${before} $name ${rest}"
       exit 0
     fi
 
-    eval "docker volume ${arguments} create $name ${rest}"
+    eval "docker volume ${arguments} create ${before} $name ${rest}"
     exit $?
   ;;
   "rmvol")
@@ -783,11 +747,11 @@ case $1 in
 
     if [[ $dry_run == 'true' ]]
     then
-      echo "docker volume ${arguments} rm $name ${rest}"
+      echo "docker volume ${arguments} rm ${before} $name ${rest}"
       exit 0
     fi
 
-    eval "docker volume ${argumetns} rm $name ${rest}"
+    eval "docker volume ${argumetns} rm ${before} $name ${rest}"
     exit $?
   ;;
   "newnet")
@@ -795,11 +759,11 @@ case $1 in
 
     if [[ $dry_run == 'true' ]]
     then
-      echo "docker network ${arguments} create $name ${rest}"
+      echo "docker network ${arguments} create ${before} $name ${rest}"
       exit 0
     fi
 
-    eval "docker network ${arguments} create $name ${rest}"
+    eval "docker network ${arguments} create ${before} $name ${rest}"
     exit $?
   ;;
   "rmnet")
@@ -807,11 +771,11 @@ case $1 in
 
     if [[ $dry_run == 'true' ]]
     then
-      echo "docker network ${arguments} rm $name ${rest}"
+      echo "docker network ${arguments} rm ${before} $name ${rest}"
       exit 0
     fi
 
-    eval "docker network ${arguments} rm $name ${rest}"
+    eval "docker network ${arguments} rm ${before} $name ${rest}"
     exit $?
   ;;
   "prunenet")
@@ -819,11 +783,11 @@ case $1 in
 
     if [[ $dry_run == 'true' ]]
     then
-      echo "docker network ${arguments} prune ${rest}"
+      echo "docker network ${arguments} prune ${before} ${rest}"
       exit 0
     fi
 
-    eval "docker network ${arguments} prune ${rest}"
+    eval "docker network ${arguments} prune ${before} ${rest}"
     exit $?
   ;;
   "networks")
@@ -831,11 +795,11 @@ case $1 in
 
     if [[ $dry_run == 'true' ]]
     then
-      echo "docker network ${arguments} ls ${rest}"
+      echo "docker network ${arguments} ls ${before} ${rest}"
       exit 0
     fi
 
-    eval "docker network ${arguments} ls ${rest}"
+    eval "docker network ${arguments} ls ${before} ${rest}"
     exit $?
   ;;
   "cp")
@@ -843,11 +807,11 @@ case $1 in
 
     if [[ $dry_run == 'true' ]]
     then
-      echo "docker cp ${arguments} ${rest}"
+      echo "docker cp ${arguments} ${before} ${rest}"
       exit 0
     fi
 
-    eval "docker cp ${arguments} ${rest}"
+    eval "docker cp ${arguments} ${before} ${rest}"
     exit $?
   ;;
   "volumes")
@@ -855,54 +819,48 @@ case $1 in
 
     if [[ $dry_run == 'true' ]]
     then
-      echo "docker volumes ${arguments} ls ${rest}"
+      echo "docker volumes ${arguments} ls ${before} ${rest}"
       exit 0
     fi
 
-    eval "docker volumes ${arguments} ls ${rest}"
+    eval "docker volumes ${arguments} ls ${before} ${rest}"
     exit $?
   ;;
   "create")
     compose='true'
     arguments_only $@
 
-    docker compose ${arguments} create --pull missing --remove-orphans ${rest}
-    exit $?
+    exec docker compose ${arguments} create --pull missing --remove-orphans ${before} ${rest}
   ;;
   "up")
     compose='true'
     arguments_only $@
 
-    docker compose ${arguments} up ${rest}
-    exit $?
+    exec docker compose ${arguments} up ${before} ${rest}
   ;;
   "down")
     compose='true'
     arguments_only $@
 
-    docker compose ${arguments} down ${rest}
-    exit $?
+    exec docker compose ${arguments} down --remove-orphans ${before} ${rest}
   ;;
   "restart")
     compose='true'
     arguments_only $@
 
-    docker compose ${arguments} restart ${rest}
-    exit $?
+    exec docker compose ${arguments} restart ${before} ${rest}
   ;;
   "list")
     compose='true'
     arguments_only $@
 
-    docker compose ${arguments} ls ${rest}
-    exit $?
+    exec docker compose ${arguments} ls ${before} ${rest}
   ;;
   "images")
     compose='true'
     arguments_only $@
 
-    docker compose ${arguments} images
-    exit $?
+    exec docker compose ${arguments} images ${before} ${rest}
   ;;
   *|"help")
     cat <<HELP
