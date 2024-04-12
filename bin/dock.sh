@@ -942,6 +942,7 @@ arg/name      = specify <name> for container|compose, for compose must follow ar
 arg/terminal  = attach command to terminal
 arg/shell     = invoke bash attached to terminal
 arg/oneshot   = delete container/service after running
+arg/caps      = <DROP>:<ADD> capabilities , by default all caps dropped, chown added
 
 [compose]
 
