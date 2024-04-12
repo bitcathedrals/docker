@@ -353,6 +353,7 @@ function resource_and_arguments {
         exit 1
       fi
 
+      make_args $@
       return
     fi
 
@@ -791,7 +792,7 @@ case $1 in
       exit 0
     fi
 
-    eval "docker network ${arguments} prune ${before} ${rest}"
+"    eval "docker network ${arguments} prune ${before} ${rest}"
     exit $?
   ;;
   "networks")
