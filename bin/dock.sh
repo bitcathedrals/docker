@@ -269,7 +269,7 @@ function make_args {
         "arg/oneshot")
           shift
 
-          arguments="${arguments} --rm"
+          rest="${rest} --rm"
           shift
         ;;
         "arg/name")
@@ -429,17 +429,6 @@ function name_and_arguments {
   make_args $@
 }
 
-identifier=""
-function identifier_and_arguments {
-  command=$1
-  shift
-
-  identifier=$1
-  shift
-
-  make_args $@
-}
-
 function arguments_only {
   command=$1
   shift
@@ -526,6 +515,18 @@ case $1 in
   "exec")
     name_and_arguments $@
 
+    if [[ $dry_run == 'true' ]]
+    then
+      if [[ $compose == 'true' ]]
+      then
+        docker compose --dry-run ${arguments} exec -it ${name} /bin/bash ${rest}
+      else
+        echo "docker container ${arguments} exec -it ${name} /bin/bash ${rest}"
+      fi
+
+      exit 0
+    fi
+
     if [[ $compose == 'true' ]]
     then
       operation='compose'
@@ -533,16 +534,23 @@ case $1 in
       operation='container'
     fi
 
-    if [[ $dry_run == 'true' ]]
-    then
-      echo "docker $operation exec ${arguments} ${name} ${rest}"
-    else
-      eval "docker $operation exec ${arguments} ${name} ${rest}"
-    fi
+    eval "docker $operation ${arguments} exec ${name} ${rest}"
   ;;
   "debug")
     name_and_arguments $@
 
+    if [[ $dry_run == 'true' ]]
+    then
+      if [[ $compose == 'true' ]]
+      then
+        docker compose --dry-run ${arguments} exec -it ${name} /bin/bash ${rest}
+      else
+        echo "docker container ${arguments} exec -it ${name} /bin/bash ${rest}"
+      fi
+
+      exit 0
+    fi
+
     if [[ $compose == 'true' ]]
     then
       operation='compose'
@@ -550,12 +558,7 @@ case $1 in
       operation='container'
     fi
 
-    if [[ $dry_run == 'true' ]]
-    then
-      echo "docker $operation exec ${arguments} -it ${name} /bin/bash ${rest}"
-    else
-      eval "docker $operation exec ${arguments} -it ${name} /bin/bash ${rest}"
-    fi
+    eval "docker $operation ${arguments} exec -it ${name} /bin/bash ${rest}"
   ;;
   "logs")
     name_and_arguments $@
@@ -728,7 +731,7 @@ case $1 in
     fi
   ;;
   "newvol")
-    identifier_and_arguments $@
+    name_and_arguments $@
 
     if [[ $dry_run == 'true' ]]
     then
@@ -738,7 +741,7 @@ case $1 in
     fi
   ;;
   "rmvol")
-    identifier_and_arguments $@
+    name_and_arguments $@
 
     if [[ $dry_run == 'true' ]]
     then
@@ -748,7 +751,7 @@ case $1 in
     fi
   ;;
   "newnet")
-    identifier_and_arguments $@
+    name_and_arguments $@
 
     if [[ $dry_run == 'true' ]]
     then
@@ -758,7 +761,7 @@ case $1 in
     fi
   ;;
   "rmnet")
-    identifier_and_arguments $@
+    name_and_arguments $@
 
     if [[ $dry_run == 'true' ]]
     then
