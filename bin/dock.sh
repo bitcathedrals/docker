@@ -877,6 +877,12 @@ case $1 in
 
     exec docker compose ${arguments} create --pull missing --remove-orphans ${before} ${rest}
   ;;
+  "destroy")
+    compose='true'
+    name_and_arguments $@
+
+    exec docker compose ${arguments}  rm -s -v ${before} {rest}
+  ;;
   "up")
     compose='true'
     arguments_only $@
@@ -970,6 +976,7 @@ arg/caps      = <DROP>:<ADD> capabilities , by default all caps dropped, chown a
 [compose]
 
 create   = create the compose services and resources
+destroy  = <NAME> destroy all the resources of a compose
 up       = create services and resources and start all services
 down     = stop the services removing all resources
 restart  = restart all stopped and running services
@@ -978,7 +985,7 @@ images   = list images used by the compose
 
 arg/compose   = specify the compose <FILE> name, can be specified multiple times
 arg/dir       = <DIR> to run compose in when specifying arg/compose
-arg/recreate  = for "create" force containers to be recreated even if config/image not changed
+arg/recreate  = for "up" force resources to be recreated even if config/image not changed
 arg/only      = don't start linked dependencies
 
 [general args]
