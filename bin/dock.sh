@@ -237,6 +237,14 @@ function make_args {
           before="${before} -it"
           shift
         ;;
+        "arg/entry")
+          shift
+
+          entry=$1
+          shift
+
+          before="--entrypoint $entry"
+          ;;
         "arg/only")
           before="${before} --no-deps"
           shift
@@ -385,6 +393,7 @@ function resource_and_arguments {
   if [[ $compose == 'true' ]]
   then
     resource=$1
+    shift
 
     if [[ -z $resource ]]
     then
@@ -984,6 +993,7 @@ arg/terminal  = attach command to terminal
 arg/shell     = invoke bash and attach to terminal
 arg/oneshot   = delete container/service after running
 arg/caps      = <DROP>:<ADD> capabilities , by default all caps dropped, chown added
+arg/entry     = override entry-point in container with <COMMAND>
 
 [compose]
 
