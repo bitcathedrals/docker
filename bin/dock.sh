@@ -981,7 +981,7 @@ arg/detach    = run docker compose/container in the background
 arg/signal    = pass <SIGNAL> to container or compose with "kill"
 arg/name      = specify <name> for container|compose, for compose must follow arg/compose
 arg/terminal  = attach command to terminal
-arg/shell     = invoke bash attached to terminal
+arg/shell     = invoke bash and attach to terminal
 arg/oneshot   = delete container/service after running
 arg/caps      = <DROP>:<ADD> capabilities , by default all caps dropped, chown added
 
