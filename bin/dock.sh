@@ -14,6 +14,14 @@ rest=""
 DROP_CAPS="all"
 ADD_CAPS="CHOWN"
 
+function before_args {
+  if [[ -n $DOCKER_COMPOSE ]]
+  then
+    compose='true'
+    arguments="${arguments} -p $DOCKER_COMPOSE"
+  fi
+}
+
 function make_args {
   if [[ -n $1 ]]
   then
@@ -55,6 +63,7 @@ function make_args {
         ;;
         "arg/all")
           shift
+
           all="true"
           before="${before} -a"
         ;;
@@ -371,113 +380,108 @@ function resource_and_arguments {
   command=$1
   shift
 
-  default=$DOCKER_IMAGE
-  parameter=''
+  before_args $@
 
-  if [[ -n $default ]]
+  if [[ $compose == 'true' ]]
   then
-    if [[ $default == 'service' ]]
+    resource=$1
+
+    if [[ -z $resource ]]
     then
-      resource=$1
-      shift
-
-      if [[ -z ${resource} ]]
-      then
-        echo >/dev/stderr "dock.sh: DOCKER_IMAGE = \"service\" requires service name (1). exiting."
-        exit 1
-      fi
-
-      make_args $@
-      return
+      echo >/dev/stderr "dock.sh: $command [resource_and_arguments] - error! when DOCKER_COMPOSE is specified a service argument must be specified"
+      exit 1
     fi
 
-    image=$default
+    make_args $@
+    return
+  fi
+
+  if [[ -n $DOCKER_IMAGE ]]
+  then
+    resource=$DOCKER_IMAGE
   else
     if [[ -n ${BUILD_NAME} ]]
     then
-      if [[ $command == "purge" ]] && [[ $all == 'true' ]]
-      then
-        resource=${BUILD_NAME}
-        return
-      fi
-
-      if [[ -n ${DOCKER_VERSION} ]]
-      then
-        image="${BUILD_NAME}:${DOCKER_VERSION}"
-      else
-        echo >/dev/stderr "dock.sh resource_and_arguments: no DOCKER_VERSION specified, using BUILD_NAME and argument (1) as version."
-        image="${BUILD_NAME}:${image}"
-      fi
+      resource=${BUILD_NAME}
     else
-      echo >/dev/stderr "dock.sh resource_and_arguments: no BUILD_NAME specified, using argument."
-
-      parameter=$1
+      resource=$1
       shift
 
-      if [[ -z $parameter ]]
+      if [[ -z $resource ]]
       then
-        echo >/dev/stderr "dock.sh resource_and_arguments: no resource (1) specified. exiting."
+        echo >/dev/stderr "dock.sh: $command [resource_and_arguments] - error! no DOCKER_COMPOSE, DOCKER_IMAGE, BUILD_NAME, or argument specified. exiting."
         exit 1
       fi
+    fi
+  fi
+
+  if [[ -n ${DOCKER_VERSION} ]]
+  then
+    resource="${resource}:${DOCKER_VERSION}"
+  else
+    echo >/dev/stderr "dock.sh: $command [resource_and_arguments] - warning! no DOCKER_VERSION specified, using argument as version."
+
+    version=$1
+    shift
+
+    resource="${resource}:${version}"
+  fi
+
+  user=$DOCKER_USER
+
+  if [[ -n $user ]]
+  then
+    resource="${user}/${resource}"
+  fi
+
+  if [[ $command == "run" ]]
+  then
+    name=$1
+    shift
+
+    if [[ -z $name ]]
+    then
+      echo >/dev/stderr "dock.sh: $command [resource_and_arguments] - error! no name specified. exiting."
+      exit 1
     fi
   fi
 
   make_args $@
-
-  if [[ $command == 'purge' ]]
-  then
-    resource=$image
-    return
-  fi
-
-  case $command in
-    "run")
-      name=$1
-      shift
-
-      if [[ -z $name ]]
-      then
-        echo >/dev/stderr "dock.sh resource_and_arguments: no name (2) specified. exiting."
-        exit 1
-      fi
-      ;;
-    *)
-      echo >/dev/stderr "dock.sh: resource_and_arguments - proceeding with resource only (1)."
-      ;;
-  esac
-
-  user=$DOCKER_USER
-
-  if [[ -z $user ]]
-  then
-    echo >/dev/stderr "dock.sh: resource_and_arguments - \"user\" not specified as DOCKER_USER. exiting."
-    exit 1
-  fi
-
-  resource="${user}/${image}"
 }
 
 function name_and_arguments {
   command=$1
   shift
 
+  before_args=$@
+
+  if [[ $compose == 'true' ]]
+  then
+    name=$1
+    shift
+
+    if [[ -z $name ]]
+    then
+      echo >/dev/stderr "dock.sh: $command [name_and_arguments] - error! name not specified. exiting."
+      exit 1
+    fi
+
+    make_args $@
+    return
+  fi
+
   name=$DOCKER_NAME
 
   if [[ -z $name ]]
   then
-    name=$DOCKER_COMPOSE
+    name=$1
+    shift
 
     if [[ -z $name ]]
     then
-      name=$1
-      shift
+      echo >/dev/stderr "dock.sh: $command [name_and_arguments] - error! name not specified. exiting."
+      exit 1
     fi
-  fi
-
-  if [[ -z $name ]]
-  then
-    echo >/dev/stderr "dock.sh: $command - name not specified. exiting."
-    exit 1
   fi
 
   make_args $@
@@ -486,6 +490,8 @@ function name_and_arguments {
 function arguments_only {
   command=$1
   shift
+
+  before_args $@
 
   make_args $@
 }
@@ -568,6 +574,12 @@ case $1 in
 
     if [[ $compose == 'true' ]]
     then
+      if [[ $dry_run == 'true' ]]
+      then
+        echo "docker compose ${arguments} exec -it ${before} ${name} ${rest}"
+        exit 0
+      fi
+
       exec docker compose ${arguments} exec -it ${before} ${name} ${rest}
     fi
 
