@@ -11,9 +11,6 @@ arguments=""
 before=""
 rest=""
 
-DROP_CAPS="all"
-ADD_CAPS="CHOWN"
-
 function before_args {
   if [[ -n $DOCKER_COMPOSE ]]
   then
@@ -132,6 +129,16 @@ function make_args {
 
           DROP_CAPS=`echo "$caps" | cut -d ':' -f 1`
           ADD_CAPS=`echo "$caps" | cut -d ':' -f 2`
+
+          if [[ -n $DROP_CAPS ]]
+          then
+            before="${before} --cap-drop $DROP_CAPS"
+          fi
+
+          if [[ -n $ADD_CAPS ]]
+          then
+            before="${before} --cap-add $ADD_CAPS"
+          fi
         ;;
         "arg/bridge")
           shift
@@ -519,20 +526,20 @@ case $1 in
     then
       if [[ $dry_run == 'true' ]]
       then
-        echo "docker compose ${arguments} run ${before} --cap-drop $DROP_CAPS --cap-add $ADD_CAPS ${resource} ${rest}"
+        echo "docker compose ${arguments} run ${before} ${resource} ${rest}"
         exit 0
       fi
 
-      exec docker compose ${arguments} run ${before} --cap-drop $DROP_CAPS --cap-add $ADD_CAPS ${resource} ${rest}
+      exec docker compose ${arguments} run ${before} ${resource} ${rest}
     fi
 
     if [[ $dry_run == 'true' ]]
     then
-      echo "docker container run ${arguments} ${before} --cap-drop $DROP_CAPS --cap-add $ADD_CAPS ${resource} ${rest}"
+      echo "docker container run ${arguments} ${before} ${resource} ${rest}"
       exit 0
     fi
 
-    eval "docker container run ${arguments} ${before} --cap-drop $DROP_CAPS --cap-add $ADD_CAPS ${resource} ${rest}"
+    eval "docker container run ${arguments} ${before} ${resource} ${rest}"
     exit $?
   ;;
   "pry")
@@ -990,7 +997,7 @@ arg/name      = specify <name> for container|compose, for compose must follow ar
 arg/terminal  = attach command to terminal
 arg/shell     = invoke bash and attach to terminal
 arg/oneshot   = delete container/service after running
-arg/caps      = <DROP>:<ADD> capabilities , by default all caps dropped, chown added
+arg/caps      = <DROP>:<ADD> capabilities
 arg/entry     = override entry-point in container with <COMMAND>
 
 [compose]
