@@ -890,11 +890,11 @@ case $1 in
 
     if [[ $dry_run == 'true' ]]
     then
-      echo "docker volumes ${arguments} ls ${before} ${rest}"
+      echo "docker volume ${arguments} ${before} ls ${rest}"
       exit 0
     fi
 
-    eval "docker volumes ${arguments} ls ${before} ${rest}"
+    eval "docker volume ${arguments} ${before} ls ${rest}"
     exit $?
   ;;
   "create")
@@ -948,7 +948,7 @@ version       = show docker version
 
 [environment]
 
-variables can be specified as exports or variables, or in pyhthon.sh, or docker.sh
+variables can be specified as exports or variables, or in python.sh, or docker.sh
 
 DOCKER_IMAGE   = <IMAGE NAME>|'service' - use as image name, or service means return arg(1) as service name
 DOCKER_VERSION = <VERSION> - version of the docker image
