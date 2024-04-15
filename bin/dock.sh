@@ -651,8 +651,6 @@ case $1 in
     shift
 
     kind=$1
-    shift
-
     case $kind in
       "container"|"volume"|"network")
       ;;
