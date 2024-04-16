@@ -3,42 +3,53 @@
 if [[ -f python.sh ]]
 then
   source python.sh
-else
-  if [[ -f docker.sh ]]
+fi
+
+if [[ -f docker.sh ]]
+then
+  source docker.sh
+fi
+
+function make_image_parameter {
+  if [[ -n $DOCKER_IMAGE ]]
   then
-    source docker.sh
-  else
-    echo >/dev/stderr "dock-image.sh: no python.sh or docker.sh file found"
+    image=$DOCKER_IMAGE
+    return
+  fi
+
+  image=$1
+
+  if [[ -z $image ]]
+  then
+    echo >/dev/stderr "dock-image.sh: make_image_parameter \"image\" (1) not specified. exiting."
     exit 1
   fi
-fi
+
+  echo "$image" | grep '/' -
+
+  if [[ $? -ne 0 ]]
+  then
+    if [[ -n $DOCKER_USER ]]
+    then
+      image="${DOCKER_USER}/${image}"
+    fi
+  fi
+}
 
 case $1 in
   "push")
     shift
 
-    label=$1
+    make_image_parameter $@
 
-    if [[ -z $label ]]
-    then
-      echo >/dev/stderr "dock-image.sh:  \"label\" not specified. exiting."
-      exit 1
-    fi
-
-    docker image push $label
+    docker image push "$image"
   ;;
   "pull")
     shift
 
-    image=$1
+    make_image_parameter $@
 
-    if [[ -z $image ]]
-    then
-      echo >/dev/stderr "dock-image.sh: pull \"image\" not specified. exiting."
-      exit 1
-    fi
-
-    docker pull "${DOCKER_USER}/${image}"
+    docker pull "${image}"
   ;;
   "images")
     shift
@@ -102,12 +113,7 @@ case $1 in
   "delete")
     shift
 
-    image=$1
-    if [[ -z $image ]]
-    then
-      echo >/dev/stderr "dock-image.sh: delete image (1) not specified. exiting."
-      exit 1
-    fi
+    make_image_parameter $@
 
     docker rmi ${image}
   ;;
@@ -130,37 +136,20 @@ case $1 in
   "inspect")
     shift
 
-    image=$1
-
-    if [[ -z $1 ]]
-    then
-      echo >/dev/null "no image specified. exiting."
-      exit 1
-    fi
+    make_image_parameter $@
 
     docker inspect ${image}
   ;;
   "export")
     shift
 
-    if [[ -z $DOCKER_USER ]]
-    then
-      echo >/dev/null "dock-image.sh export - no user specified. exiting."
-      exit 1
-    fi
+    make_image_parameter $@
 
-    name=$1
+    export_name=$(echo $image | tr -s ':' '_' | tr '-' '_')
 
-    if [[ -z $name ]]
-    then
-      echo >/dev/null "dock-image.sh export - no image specified. exiting."
-      exit 1
-    fi
+    echo >/dev/stderr "dock-image.sh export ${image} -> ${export_name}"
 
-    export_name=$(echo $name | tr -s ':' '_' | tr '-' '_')
-
-    echo >/dev/stderr "dock-image.sh export ${DOCKER_USER}/${name} -> ${export_name}"
-    docker save ${DOCKER_USER}/$name >${export_name}.tar
+    docker save "$image" >${export_name}.tar
 
     if [[ $? -ne 0 ]]
     then
@@ -172,7 +161,14 @@ case $1 in
 
     sha256sum ${export_name}.tar >${export_name}.tar.sha256
     xz -z ${export_name}.tar
-  ;;
+    ;;
+  "cve-image")
+    shift
+
+    make_image_parameter $@
+
+    exec docker scout cves $image
+    ;;
   *|"help")
 cat <<HELP
 dock-image.sh

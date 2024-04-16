@@ -447,7 +447,12 @@ function resource_and_arguments {
 
   if [[ -n $user ]]
   then
-    resource="${user}/${resource}"
+    echo "$image" | grep '/' -
+
+    if [[ $? -ne 0 ]]
+    then
+      resource="${user}/${resource}"
+    fi
   fi
 
   if [[ $command == "run" ]]
@@ -544,8 +549,6 @@ case $1 in
   ;;
   "pry")
     resource_and_arguments $@
-
-    docker inspect "pry" >/dev/null 2>&1
 
     if [[ $dry_run == 'true' ]]
     then
