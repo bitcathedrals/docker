@@ -942,6 +942,12 @@ case $1 in
 
     exec docker compose ${arguments} images ${before} ${rest}
   ;;
+  "pull")
+    compose='true'
+    arguments_only $@
+
+    exec docker compose ${arguments} pull ${before} ${rest}
+  ;;
   *|"help")
     cat <<HELP
 [engine]
@@ -1012,6 +1018,7 @@ down     = stop the services removing all resources
 restart  = restart all stopped and running services
 list     = list containers for compose
 images   = list images used by the compose
+pull     = pull container images
 
 arg/compose   = specify the compose <FILE> name, can be specified multiple times
 arg/dir       = <DIR> to run compose in when specifying arg/compose
