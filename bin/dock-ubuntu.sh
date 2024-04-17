@@ -48,7 +48,7 @@ case $command in
     docker run hello-world
     ;;
   *|"help")
-    echo <<HELP
+    cat <<HELP
 dock-ubuntu.sh
 remove     = remove existing ubuntu packages
 repository = set up the official repository
