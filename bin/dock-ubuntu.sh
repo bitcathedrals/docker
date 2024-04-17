@@ -50,7 +50,11 @@ case $command in
   *|"help")
     echo <<HELP
 dock-ubuntu.sh
-remove  = remove existing ubuntu packages
+remove     = remove existing ubuntu packages
+repository = set up the official repository
+install    = install the official packages
+enable     = start and enable the new docker install
+test       = test the new docker install
 HELP
     ;;
 esac
