@@ -241,8 +241,8 @@ function make_args {
           before="${before} -v ${vol}:${mount}:ro"
         ;;
         "arg/terminal")
-          before="${before} -it"
           shift
+          before="${before} -it"
         ;;
         "arg/entry")
           shift
@@ -250,7 +250,7 @@ function make_args {
           entry=$1
           shift
 
-          before="--entrypoint $entry"
+          before="${before} --entrypoint $entry"
           ;;
         "arg/only")
           before="${before} --no-deps"
