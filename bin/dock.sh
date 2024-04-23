@@ -682,21 +682,20 @@ case $1 in
     exit $?
   ;;
   "port")
-    shift
-    arguments_only $@
+    name_and_arguments $@
 
     if [[ $compose == 'true' ]]
     then
-      exec docker compose ${arguments} port ${before} ${rest}
+      exec docker compose ${arguments} ${before} port ${rest}
     fi
 
     if [[ $dry_run == 'true' ]]
     then
-      echo "docker container ${arguments} port ${before} ${rest}"
+      echo "docker container ${arguments} ${before} port ${name} ${rest}"
       exit 0
     fi
 
-    eval "docker container ${arguments} port ${before} ${rest}"
+    eval "docker container ${arguments} ${before} port ${name} ${rest}"
     exit $?
   ;;
   "ps")
