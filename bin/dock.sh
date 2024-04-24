@@ -474,7 +474,7 @@ function name_and_arguments {
   command=$1
   shift
 
-  before_args=$@
+  before_args $@
 
   if [[ $compose == 'true' ]]
   then
