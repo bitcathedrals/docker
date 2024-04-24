@@ -220,12 +220,12 @@ function make_args {
         "arg/mirror")
           shift
 
-          vol=$1
+          volume=$1
           shift
 
-          if [[ -z $vol ]]
+          if [[ -z $volume ]]
           then
-            echo >/dev/stderr "dock.sh: arg/mirror - volume name not given. exiting."
+            echo >/dev/stderr "dock.sh: arg/mirror - volume/bind name not given. exiting."
             exit 1
           fi
 
