@@ -197,10 +197,10 @@ function make_args {
         "arg/mount")
           shift
 
-          vol=$1
+          volume=$1
           shift
 
-          if [[ -z $vol ]]
+          if [[ -z $volume ]]
           then
             echo >/dev/stderr "dock.sh: arg/mount - volume name not given. exiting."
             exit 1
@@ -215,7 +215,7 @@ function make_args {
             exit 1
           fi
 
-          before="${before} -v ${vol}:${mount}:rw"
+          before="${before} -v ${volume}:${mount}:rw"
         ;;
         "arg/mirror")
           shift
@@ -238,7 +238,7 @@ function make_args {
             exit 1
           fi
 
-          before="${before} -v ${vol}:${mount}:ro"
+          before="${before} -v ${volume}:${mount}:ro"
         ;;
         "arg/terminal")
           shift
