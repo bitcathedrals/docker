@@ -283,7 +283,7 @@ function make_args {
             exit 1
           fi
 
-          arguments="${arguments} --project-directory \"$path\""
+          arguments="${arguments} --project-directory $path"
         ;;
         "arg/restart")
           shift
@@ -347,10 +347,28 @@ function make_args {
             shift
           fi
           ;;
+        "arg/interactive")
+          shift
+
+          before="${before} -i"
+          ;;
         "arg/attach")
           shift
 
-          arguments="${arguments} --attach"
+          case $1 in
+            "stdin")
+            ;;
+            "stdout")
+            ;;
+            "stderr")
+            ;;
+            *)
+              echo "dock.sh: attach - unknown arg $1"
+              exit 1
+              ;;
+          esac
+
+          before="${before} -a $1"
           shift
           ;;
         "arg/rmvol")
@@ -986,16 +1004,17 @@ cp            = copy a file in/out use <arg/container> <arg/host> or reversed ar
 info          = show detailed information about [container|volume|network] (1), name (2)
 top           = show processes for container/compose
 
-arg/container = specify <CONTAINER> <PATH> as a in container path cp
-arg/host      = specify <PATH> as a host path for cp
-arg/mount     = mount volume <VOL> <MOUNT> as RW
-arg/mirror    = mount volume <VOL> <MOUNT> as RO
-arg/restart   = restart <always|unless|failed>
-arg/port      = map <port:port>
-arg/user      = run as <USER> or <USER>:GROUP
-arg/groups    = extra groups <GROUP,...>
-arg/attach    = attach stdin,stdout,stderr on container run commands
-arg/cpus      = use <CPUS> number of cpus
+arg/container   = specify <CONTAINER> <PATH> as a in container path cp
+arg/host        = specify <PATH> as a host path for cp
+arg/mount       = mount volume <VOL> <MOUNT> as RW
+arg/mirror      = mount volume <VOL> <MOUNT> as RO
+arg/restart     = restart <always|unless|failed>
+arg/port        = map <port:port>
+arg/user        = run as <USER> or <USER>:GROUP
+arg/groups      = extra groups <GROUP,...>
+arg/attach      = <stdin,stdout,stderr> on container run commands
+arg/interactive = make interactive
+arg/cpus        = use <CPUS> number of cpus
 
 [container and compose]
 
