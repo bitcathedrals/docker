@@ -564,7 +564,7 @@ case $1 in
       exit 0
     fi
 
-    docker scout cves ${resource}
+    exec docker scout cves ${resource}
     ;;
   "run")
     resource_and_arguments $@

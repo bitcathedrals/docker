@@ -167,6 +167,8 @@ case $1 in
 
 # https://www.howtogeek.com/devops/how-to-sign-your-docker-images-to-increase-trust/
 
+# https://docs.docker.com/engine/security/trust/
+
   "sign/generate")
     shift
     docker trust key generate codermattie
