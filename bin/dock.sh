@@ -712,7 +712,7 @@ case $1 in
 
     kind=$1
     case $kind in
-      "container"|"volume"|"network")
+      "container"|"volume"|"network"|"trust")
       ;;
       *)
         echo /dev/stderr "dock.sh info: unrecognized type: $kind. exiting."
