@@ -188,7 +188,10 @@ case $1 in
     repository=$1
     shift
 
-    docker trust sign codermattie/$repository
+    tag=$1
+    shift
+
+    docker trust sign codermattie/${repository}:{tag}
   ;;
   "sign/check")
       docker trust signer add your-key-name registry.example.com/my-image
