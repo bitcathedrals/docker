@@ -542,8 +542,37 @@ case $1 in
   "login")
     docker login
   ;;
-  "import")
+  "sign/import")
     docker trust key load $1
+  ;;
+  "scout/enroll")
+    shift
+
+    organization=$1
+    shift
+
+    docker scout enroll $organization
+    ;;
+  "scout/enable")
+    docker scout repo enable --all
+    ;;
+  "scout/scan")
+    shift
+
+    image=$1
+    shift
+
+    docker scout cves $image
+    ;;
+  "add")
+    shift
+
+    docker trust signer add --key $1 codermattie hub.docker.com/codermattie
+
+#    docker trust signer add --key $1 codermattie registry.hub.docker.com
+  ;;
+  "sign")
+#      docker trust signer add your-key-name registry.example.com/my-image
   ;;
   "run")
     resource_and_arguments $@
@@ -974,6 +1003,11 @@ case $1 in
 
 login         = login to docker account
 version       = show docker version
+
+sign/import   = import a key
+scout/enroll  = enroll in scout scanner
+scout/enable  = turn on scout for all repos
+scout/scan    = scan the <IMAGE> for vulnerabilites
 
 [environment]
 
