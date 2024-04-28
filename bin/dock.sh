@@ -556,12 +556,15 @@ case $1 in
     docker scout repo enable --all
     ;;
   "scout/scan")
-    shift
+    resource_and_arguments $@
 
-    image=$1
-    shift
+    if [[ $dry_run == 'true' ]]
+    then
+      echo "docker scout cves ${resource}"
+      exit 0
+    fi
 
-    docker scout cves $image
+    docker scout cves ${resource}
     ;;
   "run")
     resource_and_arguments $@
@@ -993,7 +996,6 @@ case $1 in
 login         = login to docker account
 version       = show docker version
 
-sign/import   = import a key
 scout/enroll  = enroll in scout scanner
 scout/enable  = turn on scout for all repos
 scout/scan    = scan the <IMAGE> for vulnerabilites
