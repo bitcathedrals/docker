@@ -3,6 +3,8 @@
 test -f python.sh && source python.sh
 test -f docker.sh && source docker.sh
 
+export DOCKER_CONTENT_TRUST=1
+
 dry_run='false'
 compose='false'
 all='false'
@@ -542,9 +544,6 @@ case $1 in
   "login")
     docker login
   ;;
-  "sign/import")
-    docker trust key load $1
-  ;;
   "scout/enroll")
     shift
 
@@ -564,16 +563,6 @@ case $1 in
 
     docker scout cves $image
     ;;
-  "add")
-    shift
-
-    docker trust signer add --key $1 codermattie hub.docker.com/codermattie
-
-#    docker trust signer add --key $1 codermattie registry.hub.docker.com
-  ;;
-  "sign")
-#      docker trust signer add your-key-name registry.example.com/my-image
-  ;;
   "run")
     resource_and_arguments $@
 
