@@ -10,6 +10,8 @@ then
   source docker.sh
 fi
 
+export DOCKER_CONTENT_TRUST=1
+
 function make_image_parameter {
   if [[ -n $DOCKER_IMAGE ]]
   then
@@ -162,13 +164,35 @@ case $1 in
     sha256sum ${export_name}.tar >${export_name}.tar.sha256
     xz -z ${export_name}.tar
     ;;
-  "cve-image")
+
+# https://www.howtogeek.com/devops/how-to-sign-your-docker-images-to-increase-trust/
+
+  "sign/generate")
+    shift
+    docker trust key generate codermattie
+    ;;
+  "sign/add")
     shift
 
-    make_image_parameter $@
+    repository=$1
+    shift
 
-    exec docker scout cves $image
-    ;;
+    docker trust signer add --key ~/.docker/trust/codermattie.pub codermattie codermattie/$repository
+  ;;
+  "sign/import")
+    docker trust key load $1
+  ;;
+  "sign")
+    shift
+
+    repository=$1
+    shift
+
+    docker trust sign codermattie/$repository
+  ;;
+  "sign/check")
+      docker trust signer add your-key-name registry.example.com/my-image
+  ;;
   *|"help")
 cat <<HELP
 dock-image.sh
@@ -184,6 +208,11 @@ delete     = delete IMAGE (1)
 nuke       = delete all images! will require confirmation
 export     = export a image <image> to a xz compressed archive with a sha256 checksum
 inspect    = inspect <image>
+
+sign/generate = generate a signature key pair
+sign/add      = add repo keys
+sign/import   = import a key
+sign          = sign an image
 HELP
   ;;
 esac
