@@ -172,6 +172,9 @@ case $1 in
   "login")
     docker login
   ;;
+  "import")
+    docker trust key load $1
+  ;;
   "run")
     image_and_arguments $@
 
