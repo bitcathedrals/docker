@@ -343,10 +343,19 @@ function make_args {
           shift
           compose='true'
 
-          if [[ -n $1 ]] && [[ -e $1 ]]
+          if [[ -n $1 ]]
           then
-            arguments="${arguments} -f $1"
+            if [[ -e $1 ]]
+            then
+                arguments="${arguments} -f $1"
+            else
+                arguments="${arguments} -p $1"
+            fi
+
             shift
+          else
+            echo >/dev/stderr "dock.sh: error! arg/compose requires a file or name"
+            exit 1
           fi
           ;;
         "arg/interactive")
