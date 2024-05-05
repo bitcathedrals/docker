@@ -11,7 +11,12 @@ case $1 in
     docker buildx version
   ;;
   "create")
-    docker buildx create --name $BUILDER --platform=$DOCKER_PLATFORMS --use
+    shift
+    docker buildx create --name $BUILDER --platform=$DOCKER_PLATFORMS --use $@
+  ;;
+  "destroy")
+    shift
+    docker buildx rm --name $BUILDER
   ;;
   "ls")
     docker buildx ls
