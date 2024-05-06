@@ -1,5 +1,9 @@
 #! /usr/bin/env bash
 
+
+# https://www.howtogeek.com/devops/how-to-sign-your-docker-images-to-increase-trust/
+# https://docs.docker.com/engine/security/trust/
+
 if [[ -f python.sh ]]
 then
   source python.sh
@@ -40,150 +44,145 @@ function make_image_parameter {
 
 case $1 in
   "push")
-    shift
+      shift
 
-    make_image_parameter $@
+      make_image_parameter $@
 
-    docker image push "$image"
-  ;;
+      exec docker image push "$image"
+      ;;
   "pull")
-    shift
+      shift
 
-    make_image_parameter $@
+      make_image_parameter $@
 
-    docker pull "${image}"
-  ;;
+      exec docker pull "${image}"
+      ;;
   "images")
-    shift
+      shift
 
-    filter=$1
+      filter=$1
 
-    if [[ -n filter ]]
-    then
-      docker images | grep -E "$filter"
-    else
-      docker images
-    fi
-  ;;
+      if [[ -n filter ]]
+      then
+          exec docker images | grep -E "$filter"
+      else
+          exec docker images
+      fi
+      ;;
   "dangling")
-    docker images --filter dangling=true
-  ;;
+      exec docker images --filter dangling=true
+      ;;
   "prune")
-    docker image prune
-  ;;
+      exec docker image prune
+      ;;
   "filter")
-    shift
-    eval "docker images --filter=reference=\"$*\""
-  ;;
+      shift
+      eval "docker images --filter=reference=\"$*\""
+      ;;
   "label")
-    shift
+      shift
 
-    label=$1
+      label=$1
 
-    if [[ -z $label ]]
-    then
-      echo >/dev/stderr "dock-image.sh: label (1) not specified. exiting."
-      exit 1
-    fi
+      if [[ -z $label ]]
+      then
+          echo >/dev/stderr "dock-image.sh: label (1) not specified. exiting."
+          exit 1
+      fi
 
-    docker images --filter=label=${label}
-  ;;
+      exec docker images --filter=label=${label}
+      ;;
   "search")
-    shift
+      shift
 
-    image=$1
+      image=$1
 
-    if [[ -z $image ]]
-    then
-      echo >/dev/stderr "dock-image.sh: search image (1) not specified. exiting."
-      exit 1
-    fi
+      if [[ -z $image ]]
+      then
+          echo >/dev/stderr "dock-image.sh: search image (1) not specified. exiting."
+          exit 1
+      fi
 
-    shift
+      shift
 
-    if [[ $1 == "official" ]]
-    then
-      official="--filter \"is-official=true\""
-    else
-      official=""
-    fi
+      if [[ $1 == "official" ]]
+      then
+          official="--filter \"is-official=true\""
+      else
+          official=""
+      fi
 
-    shift
+      shift
 
-    eval "docker search \"$image\" $official $* | tr -s ' ' | sort -k 1"
+      eval "docker search \"$image\" $official $* | tr -s ' ' | sort -k 1"
   ;;
   "delete")
-    shift
+      shift
 
-    make_image_parameter $@
+      make_image_parameter $@
 
-    docker rmi ${image}
+      exec docker rmi ${image}
   ;;
   "nuke")
-    shift
+      shift
 
-    echo "NUKE! will delete all images!!"
+      echo "NUKE! will delete all images!!"
 
-    read -p "Proceed? [y/n]: " proceed
+      read -p "Proceed? [y/n]: " proceed
 
-    if [[ $proceed = "y" ]]
-    then
-      echo ">>> proceeding with nuclear fire!"
-      docker rmi $(docker images -q) -f
-    else
-      echo ">>> ABORT! exiting now!"
-      exit 1
-    fi
-  ;;
+      if [[ $proceed = "y" ]]
+      then
+          echo ">>> proceeding with nuclear fire!"
+          exec docker rmi $(docker images -q) -f
+      else
+          echo ">>> ABORT! exiting now!"
+          exit 1
+      fi
+      ;;
   "inspect")
-    shift
+      shift
 
-    make_image_parameter $@
-
-    docker inspect ${image}
-  ;;
+      make_image_parameter $@
+      
+      exec docker inspect ${image}
+      ;;
   "export")
-    shift
+      shift
 
-    make_image_parameter $@
+      make_image_parameter $@
 
-    export_name=$(echo $image | tr -s ':' '_' | tr '-' '_')
+      export_name=$(echo $image | tr -s ':' '_' | tr '-' '_')
 
-    echo >/dev/stderr "dock-image.sh export ${image} -> ${export_name}"
+      echo >/dev/stderr "dock-image.sh export ${image} -> ${export_name}"
 
-    docker save "$image" >${export_name}.tar
+      docker save "${image}" >${export_name}.tar
 
-    if [[ $? -ne 0 ]]
-    then
-      echo /dev/stderr "dock-image.sh export encountered \"save\" error. cannot continue. exiting."
-      rm ${export_name}.tar
+      if [[ $? -ne 0 ]]
+      then
+          echo /dev/stderr "dock-image.sh export encountered \"save\" error. cannot continue. exiting."
+          rm ${export_name}.tar
 
-      exit 1
-    fi
+          exit 1
+      fi
 
-    sha256sum ${export_name}.tar >${export_name}.tar.sha256
-    xz -z ${export_name}.tar
-    ;;
-
-# https://www.howtogeek.com/devops/how-to-sign-your-docker-images-to-increase-trust/
-
-# https://docs.docker.com/engine/security/trust/
-
+      sha256sum ${export_name}.tar >${export_name}.tar.sha256
+      xz -z ${export_name}.tar
+      ;;
   "sign/generate")
-    shift
-    docker trust key generate codermattie
-    ;;
+      shift
+      exec docker trust key generate codermattie
+      ;;
   "sign/add")
     shift
 
     repository=$1
     shift
 
-    docker trust signer add --key ~/.docker/trust/codermattie.pub codermattie codermattie/$repository
-  ;;
+    exec docker trust signer add --key ~/.docker/trust/codermattie.pub codermattie codermattie/$repository
+    ;;
   "sign/import")
-    docker trust key load $1
-  ;;
+      exec docker trust key load $1
+      ;;
   "sign")
     shift
 
@@ -193,11 +192,19 @@ case $1 in
     tag=$1
     shift
 
-    docker trust sign codermattie/${repository}:{tag}
-  ;;
+    exec docker trust sign ${DOCKER_USER}/${repository}:{tag}
+    ;;
   "sign/check")
-      docker trust signer add your-key-name registry.example.com/my-image
-  ;;
+      shift
+      exec docker trust signer add your-key-name registry.example.com/my-image
+      ;;
+  "cves")
+      shift
+
+      make_image_parameter $@
+
+      exec docker-scout cves ${image} --exit-code --only-severity critical,high
+      ;;
   *|"help")
 cat <<HELP
 dock-image.sh
