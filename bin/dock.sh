@@ -441,6 +441,15 @@ function resource_and_arguments {
     return
   fi
 
+  if echo "$1" | grep -E '^/' - >/dev/null 2>&1
+  then
+    resource=$(echo $1 | sed -e 's,^/,,')
+    shift
+
+    make_args $@
+    return
+  fi
+
   if [[ -n $DOCKER_IMAGE ]]
   then
     resource=$DOCKER_IMAGE
@@ -460,16 +469,20 @@ function resource_and_arguments {
     fi
   fi
 
-  if [[ -n ${DOCKER_VERSION} ]]
+  echo $resource | grep ':' - >/dev/null 2>&1
+  if [[ $? -ne 0 ]]
   then
-    resource="${resource}:${DOCKER_VERSION}"
-  else
-    echo >/dev/stderr "dock.sh: $command [resource_and_arguments] - warning! no DOCKER_VERSION specified, using argument as version."
+    if [[ -n ${DOCKER_VERSION} ]]
+    then
+      resource="${resource}:${DOCKER_VERSION}"
+    else
+      echo >/dev/stderr "dock.sh: $command [resource_and_arguments] - warning! no DOCKER_VERSION specified, using argument as version."
 
-    version=$1
-    shift
+      version=$1
+      shift
 
-    resource="${resource}:${version}"
+      resource="${resource}:${version}"
+    fi
   fi
 
   user=$DOCKER_USER
