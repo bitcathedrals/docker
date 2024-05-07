@@ -24,7 +24,7 @@ function check_for_dry {
 function make_image_parameter {
     check_for_dry $@ && shift
 
-    if echo "$1" | grep -E '^/' -
+    if echo "$1" | grep -E '^/' - >/dev/null 2>&1
     then
         image=$(echo $1 | sed -e 's,^/,,')
         return
@@ -181,12 +181,12 @@ case $1 in
       shift
       check_for_dry $@ && shift
 
-      if [[ $1 == "-official" ]]
+      official=""
+
+      if [[ $1 == "-o" ]]
       then
           official="--filter \"is-official=true\""
           shift
-      else
-          official=""
       fi
 
       query=$1
@@ -200,11 +200,11 @@ case $1 in
 
       if [[ $dry == 'true' ]]
       then
-          echo "docker search \"$query\" $official $* | tr -s ' ' | sort -k 1"
+          echo "docker search $official $* \"$query\" | tr -s ' ' | sort -k 1"
           exit 0
       fi
 
-      eval "docker search \"$query\" $official $* | tr -s ' ' | sort -k 1"
+      eval "docker search $official $* \"$query\" | tr -s ' ' | sort -k 1"
   ;;
   "delete")
       shift
