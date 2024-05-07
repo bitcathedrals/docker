@@ -196,29 +196,40 @@ case $1 in
           exit 1
       fi
 
-      echo >/dev/stderr "dock-image.sh: searching for - $query"
-      
+      base=$(echo "$query" | tr -s "_" "-" | cut -d '-' -f 1)
+
+      echo >/dev/stderr "dock-image.sh: searching for - $query/$base"
+
       for repo in $(eval "docker search $* \"$query\" | grep -v -E '^NAME' | tr -s ' ' | cut -d ' ' -f 1")
       do
           account=$(echo "$repo" | cut -d '/' -f 1)
           repo=$(echo "$repo" | cut -d '/' -f 2)
 
-          if [[ $account != $query ]]
+          if [[ $account != $base ]]
           then
-#              echo >/dev/stderr "dock-image.sh: account $account does not match query - ${query}. skipping."
+              echo >/dev/stderr "dock-image.sh: account $account does not match query - ${query}. skipping."
               continue
           fi
 
           hit=$(curl --no-progress-meter -X GET "https://hub.docker.com/v2/repositories/library/$repo/tags?page_size=20")
+          if [[ $? -ne 0 ]]
+          then
+              echo >/dev/stderr "dock-image.sh skipping due to curl HTTP error - https://hub.docker.com/v2/repositories/library/$repo/tags?page_size=20"
+              continue
+          fi
+
           if [[ $hit == "" ]]
           then
+              echo >/dev/stderr "dock-image.sh skipping due to error - empty response. skipping."
               continue
           fi
 
           echo $hit | jq 'has("message")' | grep -i 'true' - >/dev/null 2>&1
           if [[ $? -eq 0 ]]
           then
-#              echo "skipping $hit"
+              message=$(echo $hit | jq '.message')
+              echo >/dev/stderr "dock-image.sh skipping due to error - $message /v2/repositories/library/$repo/tags"
+
               continue
           fi
 
