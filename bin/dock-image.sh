@@ -7,7 +7,13 @@
 test -f python.sh && source python.sh
 test -f docker.sh && source docker.sh
 
-export DOCKER_CONTENT_TRUST=1
+if [[ $1 == "-untrusted" ]]
+then
+    echo "dock-image.sh: warning! allowing untrusted commands."
+    shift
+else
+    export DOCKER_CONTENT_TRUST=1
+fi
 
 dry='false'
 
@@ -21,18 +27,30 @@ function check_for_dry {
   return 1
 }
 
+function add_account {
+    if echo $image | grep -v "/"
+    then
+        account=$(echo $image | cut -d ':' -f 1)
+        image="$account/$image"
+    fi
+}
+
 function make_image_parameter {
     check_for_dry $@ && shift
-
-    if echo "$1" | grep '/' - | grep ":" - >/dev/null 2>&1
-    then
-        image=$1
-        return
-    fi
 
     if echo "$1" | grep -E '^/' - >/dev/null 2>&1
     then
         image=$(echo $1 | sed -e 's,^/,,')
+
+        add_account
+        return
+    fi
+
+    if echo "$1" | grep '/' - | grep ":" - >/dev/null 2>&1
+    then
+        image=$1
+
+        add_account
         return
     fi
 
