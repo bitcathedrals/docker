@@ -24,6 +24,12 @@ function check_for_dry {
 function make_image_parameter {
     check_for_dry $@ && shift
 
+    if echo "$1" | grep '/' - | grep ":" - >/dev/null 2>&1
+    then
+        image=$1
+        return
+    fi
+
     if echo "$1" | grep -E '^/' - >/dev/null 2>&1
     then
         image=$(echo $1 | sed -e 's,^/,,')
@@ -181,14 +187,6 @@ case $1 in
       shift
       check_for_dry $@ && shift
 
-      official=""
-
-      if [[ $1 == "-o" ]]
-      then
-          official="--filter \"is-official=true\""
-          shift
-      fi
-
       query=$1
       shift
 
@@ -198,13 +196,36 @@ case $1 in
           exit 1
       fi
 
-      if [[ $dry == 'true' ]]
-      then
-          echo "docker search $official $* \"$query\" | tr -s ' ' | sort -k 1"
-          exit 0
-      fi
+      echo >/dev/stderr "dock-image.sh: searching for - $query"
+      
+      for repo in $(eval "docker search $* \"$query\" | grep -v -E '^NAME' | tr -s ' ' | cut -d ' ' -f 1")
+      do
+          account=$(echo "$repo" | cut -d '/' -f 1)
+          repo=$(echo "$repo" | cut -d '/' -f 2)
 
-      eval "docker search $official $* \"$query\" | tr -s ' ' | sort -k 1"
+          if [[ $account != $query ]]
+          then
+#              echo >/dev/stderr "dock-image.sh: account $account does not match query - ${query}. skipping."
+              continue
+          fi
+
+          hit=$(curl --no-progress-meter -X GET "https://hub.docker.com/v2/repositories/library/$repo/tags?page_size=20")
+          if [[ $hit == "" ]]
+          then
+              continue
+          fi
+
+          echo $hit | jq 'has("message")' | grep -i 'true' - >/dev/null 2>&1
+          if [[ $? -eq 0 ]]
+          then
+#              echo "skipping $hit"
+              continue
+          fi
+
+          echo $hit | jq ".results[] | .name" | sed -e 's,",,g' | grep -E '^\d$|\.' | sort -V
+          echo >/dev/stderr "dock-image.sh: >>>${repo}<<<"
+      done
+      
   ;;
   "delete")
       shift
