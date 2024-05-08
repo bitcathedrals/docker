@@ -1,6 +1,6 @@
 #! /usr/bin/env bash
 
-DOCKER_PLATFORMS="linux/amd64,linux/arm64,linux/arm/v7"
+DOCKER_PLATFORMS="linux/amd64,linux/arm64"
 
 BUILDER="uber"
 
@@ -11,7 +11,12 @@ case $1 in
     docker buildx version
   ;;
   "create")
-    docker buildx create --name $BUILDER --platform=$DOCKER_PLATFORMS --use
+    shift
+    docker buildx create --name $BUILDER --platform=$DOCKER_PLATFORMS --use $@
+  ;;
+  "destroy")
+    shift
+    docker buildx rm --name $BUILDER
   ;;
   "ls")
     docker buildx ls
@@ -104,18 +109,18 @@ case $1 in
 
     if [[ $proceed = "y" ]]
     then
-      echo /dev/stderr ">>> proceeding with release start!"
+      echo >/dev/stderr ">>> proceeding with release start!"
     else
-      echo /dev/stderr ">>> ABORT! exiting now!"
+      echo >/dev/stderr ">>> ABORT! exiting now!"
       exit 1
     fi
 
     if docker buildx build --builder=uber -t "$user/$name:$version" --platform="$DOCKER_PLATFORMS" --push .
     then
-      echo /dev/stderr "dock-build.sh build - success!"
+      echo >/dev/stderr "dock-build.sh build - success!"
       echo "FROM $user/$name:$version" >Dockerfile.${name}-${version}
     else
-      echo /dev/stderr "dock-build.sh build - failed!."
+      echo >/dev/stderr "dock-build.sh build - failed!."
       exit 1
     fi
   ;;
