@@ -242,6 +242,20 @@ function make_args {
 
           before="${before} -v ${volume}:${mount}:ro"
         ;;
+        "arg/env-file")
+          shift
+
+          env_file="$1"
+          shift
+
+          if [[ ! -f $env_file ]]
+          then
+            echo >/dev/stderr "dock.sh: arg/env-file specified but file not found - $env_file"
+            exit 1
+          fi
+
+          arguments="${arguments} --env-file $env_file"
+          ;;
         "arg/terminal")
           shift
           before="${before} -it"
@@ -1079,6 +1093,7 @@ arg/entry     = override entry-point in container with <COMMAND>
 
 [compose]
 
+env-file = <FILE> specify file as an env file
 create   = create the compose services and resources
 destroy  = <NAME> destroy all the resources of a compose
 up       = create services and resources and start all services
