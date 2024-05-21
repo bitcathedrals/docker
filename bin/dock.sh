@@ -399,7 +399,7 @@ function make_args {
         "arg/rmvol")
           shift
 
-          arguments="${arguments} --volumes"
+          before="${before} --volumes"
           shift
         ;;
         "arg/recreate")
@@ -902,7 +902,7 @@ case $1 in
       exit 0
     fi
 
-    eval "docker volume ${argumetns} rm ${before} $name ${rest}"
+    eval "docker volume ${arguments} rm ${before} $name ${rest}"
     exit $?
   ;;
   "newnet")
@@ -1047,7 +1047,6 @@ DOCKER_USER    = docker registry user name
 [containers & compose]
 
 run           = create & start container/compose <RESOURCE> <NAME> resource=default|image|compose file , NAME=default|identifier to assign
-
 exec          = exec a process inside the container/compose <NAME> [arg/service] alongside PID 1
 debug         = exec a bash inside the container/service <NAME> alongside PID 1
 ps            = show running containers or compose services, need arg/compose with arg/name after to show a compose
