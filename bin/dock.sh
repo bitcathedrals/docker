@@ -400,7 +400,6 @@ function make_args {
           shift
 
           before="${before} --volumes"
-          shift
         ;;
         "arg/recreate")
           shift
