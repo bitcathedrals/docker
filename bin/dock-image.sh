@@ -418,6 +418,12 @@ case $1 in
 
       exec docker-scout cves ${image} --exit-code --only-severity critical,high
       ;;
+  "layers")
+      shift
+      make_image_parameter $@
+      
+      exec docker history $image
+    ;;
   *|"help")
 cat <<HELP
 dock-image.sh
@@ -449,6 +455,7 @@ sign/import   = import a key [ARGS] (KEY)
 sign          = sign an image [ARGS] [IMAGE]
 
 cves          = check for vulnerabilities in image [ARGS] [IMAGE]
+layers        = show layers info for image
 HELP
   ;;
 esac
