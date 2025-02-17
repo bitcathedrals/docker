@@ -3,7 +3,13 @@
 test -f python.sh && source python.sh
 test -f docker.sh && source docker.sh
 
-export DOCKER_CONTENT_TRUST=1
+if [[ $1 == "-untrusted" ]]
+then
+  export DOCKER_CONTENT_TRUST=0
+  shift
+else
+  export DOCKER_CONTENT_TRUST=1
+fi
 
 dry_run='false'
 compose='false'
