@@ -460,60 +460,62 @@ function resource_and_arguments {
     return
   fi
 
-  if echo "$1" | grep -E '^/' - >/dev/null 2>&1
-  then
-    resource=$(echo $1 | sed -e 's,^/,,')
-    shift
+  resource=$1
+  shift
 
-    make_args $@
-    return
-  fi
+  container=""
+  version=""
 
-  if [[ -n $DOCKER_IMAGE ]]
+  echo "$resource" | grep '/' -
+
+  if [[ $? -eq 0 ]]
   then
-    resource=$DOCKER_IMAGE
+    user=$(echo "$resource" | cut -d '/' -f 1)
+    image=$(echo "$resource" | cut -d '/' -f 2)
   else
-    if [[ -n ${BUILD_NAME} ]]
-    then
-      resource=${BUILD_NAME}
-    else
-      resource=$1
-      shift
-
-      if [[ -z $resource ]]
-      then
-        echo >/dev/stderr "dock.sh: $command [resource_and_arguments] - error! no DOCKER_COMPOSE, DOCKER_IMAGE, BUILD_NAME, or argument specified. exiting."
-        exit 1
-      fi
-    fi
+    user=$DOCKER_USER
   fi
 
-  echo $resource | grep ':' - >/dev/null 2>&1
-  if [[ $? -ne 0 ]]
+  echo "dock.sh: user=$user"
+
+  echo "$image" | grep ':' -
+  
+  if [[ $? -eq 0 ]]
   then
-    if [[ -n ${DOCKER_VERSION} ]]
+    container=$(echo "$image" | cut -d ':' -f 1)
+    version=$(echo "$image" | cut -d ':' -f 2)
+  else
+    if [[ -n $DOCKER_IMAGE ]]
     then
-      resource="${resource}:${DOCKER_VERSION}"
+      container=$DOCKER_IMAGE
     else
-      echo >/dev/stderr "dock.sh: $command [resource_and_arguments] - warning! no DOCKER_VERSION specified, using argument as version."
-
-      version=$1
-      shift
-
-      resource="${resource}:${version}"
+      container="$image"
     fi
   fi
 
-  user=$DOCKER_USER
+  echo "dock.sh: container=$container"
+
+  if [[ -z "$version" ]]
+  then
+    if [[ -n "$DOCKER_VERSION" ]]
+    then
+      version=$DOCKER_VERSION
+    fi
+  fi
 
   if [[ -n $user ]]
   then
-    echo "$image" | grep '/' -
+    resource="${user}/"
+  fi
 
-    if [[ $? -ne 0 ]]
-    then
-      resource="${user}/${resource}"
-    fi
+  if [[ -n $container ]]
+  then
+    resource="${resource}${container}"
+  fi
+
+  if [[ -n $version ]]
+  then
+    resource="${resource}:${version}"
   fi
 
   if [[ $command == "run" ]]
@@ -585,6 +587,10 @@ case $1 in
   "login")
     docker login
   ;;
+  "test-parsing")
+    resource_and_arguments $@
+    echo "$resource"
+    ;;
   "scout/enroll")
     shift
 
@@ -1032,6 +1038,10 @@ case $1 in
   ;;
   *|"help")
     cat <<HELP
+[tools]
+
+test-parse    = echo out resource as parsed for testing parsing
+
 [engine]
 
 login         = login to docker account
